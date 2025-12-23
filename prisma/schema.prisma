@@ -24,7 +24,7 @@ model User {
   updatedAt         DateTime          @updatedAt
 
   // Profile Relations
-  profile           Profile?
+  profile           Profile? 
   
   // Interaction Relations
   sentMatches       Match[]           @relation("MatchesSent")
@@ -44,14 +44,14 @@ model Profile {
   gender            Gender
   occupation        String?           // e.g., "Student/Designer"
   bio               String?           @db.VarChar(500)
-  
+
   // Preferences & Location
   budgetMin         Float
   budgetMax         Float
   preferredAreas    String[]          // Delhi, Gurgaon, Noida 
   moveInDate        DateTime?
   
-  // Lifestyle Survey  
+  // Lifestyle Survey 
   sleepHabit        SleepHabit?       // Early bird/Night owl
   cleanliness       Level?            // High/Medium/Low
   smoking           Boolean           @default(false)
