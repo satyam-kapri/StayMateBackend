@@ -1,0 +1,132 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- User & Authentication ---
+model User {
+  id                String            @id @default(uuid())
+  phone             String            @unique 
+  firebaseUid       String            @unique // Integration with Firebase Auth
+  isVerified        Boolean           @default(false) 
+  premiumStatus     PremiumStatus     @default(FREE)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  // Profile Relations
+  profile           Profile?
+  
+  // Interaction Relations
+  sentMatches       Match[]           @relation("MatchesSent")
+  receivedMatches   Match[]           @relation("MatchesReceived")
+  
+}
+
+// ---  Profile & Lifestyle Survey ---
+model Profile {
+  id                String            @id @default(uuid())
+  userId            String            @unique
+  user              User              @relation(fields: [userId], references: [id])
+  
+  // Basic Info 
+  name              String
+  age               Int
+  gender            Gender
+  occupation        String?           // e.g., "Student/Designer"
+  bio               String?           @db.VarChar(500)
+  
+  // Preferences & Location
+  budgetMin         Float
+  budgetMax         Float
+  preferredAreas    String[]          // Delhi, Gurgaon, Noida 
+  moveInDate        DateTime?
+  
+  // Lifestyle Survey  
+  sleepHabit        SleepHabit?       // Early bird/Night owl
+  cleanliness       Level?            // High/Medium/Low
+  smoking           Boolean           @default(false)
+  drinking          Boolean           @default(false)
+  pets              Boolean           @default(false)
+  socialVibe        SocialVibe?       // Quiet/Social
+  
+  // Media 
+  photos            Photo[]
+  
+  lastSeen          DateTime?
+}
+
+model Photo {
+  id        String   @id @default(uuid())
+  profileId String
+  profile   Profile  @relation(fields: [profileId], references: [id])
+  url       String   
+  order     Int      @default(0) // For carousel order 
+}
+
+
+// ---  AI Compatibility & Matching ---
+model Match {
+  id                String            @id @default(uuid())
+  requesterId       String
+  receiverId        String
+  requester         User              @relation("MatchesSent", fields: [requesterId], references: [id])
+  receiver          User              @relation("MatchesReceived", fields: [receiverId], references: [id])
+  
+  compatibilityScore Int              // Rule-based % 
+  status            MatchStatus       @default(PENDING) // PENDING, CONNECTED, SKIPPED
+  
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  @@unique([requesterId, receiverId])
+}
+
+// --- Enums ---
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum PremiumStatus {
+  FREE
+  PREMIUM
+}
+
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum MatchStatus {
+  PENDING
+  CONNECTED // Mutual Connect 
+  SKIPPED
+}
+
+enum SleepHabit {
+  EARLY_BIRD
+  NIGHT_OWL
+}
+
+enum Level {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum SocialVibe {
+  QUIET
+  SOCIAL
+}
