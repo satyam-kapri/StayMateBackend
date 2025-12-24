@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import authRouter from "./src/routes/authRouter.js";
+import profileRouter from "./src/routes/profileRouter.js";
 import morgan from "morgan";
 
 const app = express();
@@ -10,6 +11,7 @@ app.use(morgan("dev"));
 app.use(cors({ origin: "*" }));
 app.use(express.json());
 app.use("/auth", authRouter);
+app.use("/profile", profileRouter);
 
 // Start the server
 const PORT = process.env.PORT || 3000;
