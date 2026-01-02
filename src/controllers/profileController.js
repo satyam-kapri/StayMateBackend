@@ -1,173 +1,233 @@
 import prisma from "../../prisma/client.js";
-
-const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient();
-
-/** ───────────── Helpers (simple inline validation) ───────────── */
-const isIsoDate = (v) => typeof v === "string" && !Number.isNaN(Date.parse(v));
-
-const validateCreate = (body) => {
-  const errors = [];
-  if (!body?.userId) errors.push("userId is required");
-  if (!body?.name) errors.push("name is required");
-  if (typeof body?.age !== "number") errors.push("age must be a number");
-  if (!["MALE", "FEMALE", "OTHER"].includes(body?.gender)) errors.push("gender must be MALE|FEMALE|OTHER");
-  if (typeof body?.budgetMin !== "number") errors.push("budgetMin must be a number");
-  if (typeof body?.budgetMax !== "number") errors.push("budgetMax must be a number");
-  if (body?.budgetMin > body?.budgetMax) errors.push("budgetMin must be <= budgetMax");
-  if (body?.moveInDate && !isIsoDate(body.moveInDate)) errors.push("moveInDate must be ISO date string");
-  if (body?.lastSeen && !isIsoDate(body.lastSeen)) errors.push("lastSeen must be ISO date string");
-  return errors;
+import fs from "fs";
+/**
+ * Helper: create profile if not exists
+ */
+const getOrCreateProfile = async (userId) => {
+  return prisma.profile.upsert({
+    where: { userId },
+    update: {},
+    create: {
+      userId,
+      name: "",
+      age: 0,
+      gender: "MALE",
+      budgetMin: 0,
+      budgetMax: 0,
+      preferredAreas: [],
+    },
+  });
 };
 
-const validateUpdate = (body) => {
-  const errors = [];
-  if (body?.gender && !["MALE", "FEMALE", "OTHER"].includes(body.gender)) errors.push("gender must be MALE|FEMALE|OTHER");
-  if (body?.sleepHabit && !["EARLY_BIRD", "NIGHT_OWL"].includes(body.sleepHabit)) errors.push("sleepHabit must be EARLY_BIRD|NIGHT_OWL");
-  if (body?.cleanliness && !["HIGH", "MEDIUM", "LOW"].includes(body.cleanliness)) errors.push("cleanliness must be HIGH|MEDIUM|LOW");
-  if (body?.socialVibe && !["QUIET", "SOCIAL"].includes(body.socialVibe)) errors.push("socialVibe must be QUIET|SOCIAL");
-  if (body?.moveInDate && !isIsoDate(body.moveInDate)) errors.push("moveInDate must be ISO date string");
-  if (body?.lastSeen && !isIsoDate(body.lastSeen)) errors.push("lastSeen must be ISO date string");
-  if (body?.budgetMin !== undefined && typeof body.budgetMin !== "number") errors.push("budgetMin must be a number");
-  if (body?.budgetMax !== undefined && typeof body.budgetMax !== "number") errors.push("budgetMax must be a number");
-  if (body?.budgetMin !== undefined && body?.budgetMax !== undefined && body.budgetMin > body.budgetMax) {
-    errors.push("budgetMin must be <= budgetMax");
-  }
-  return errors;
-};
-
-/** ───────────── Controllers ───────────── */
-
-// CREATE Profile
-exports.createProfile = async (req, res) => {
-  const errors = validateCreate(req.body);
-  if (errors.length) return res.status(400).json({ errors });
-
-  const d = req.body;
-
-  // Ensure user exists
-  const user = await prisma.user.findUnique({ where: { id: d.userId } });
-  if (!user) return res.status(404).json({ error: "User not found" });
-
+/**
+ * 1️⃣ BASIC INFO
+ */
+export const updateBasicInfo = async (req, res) => {
   try {
-    const profile = await prisma.profile.create({
+    const { name, age, gender, occupation, currentStep } = req.body;
+    const userId = req.user.userId;
+
+    await getOrCreateProfile(userId);
+
+    const profile = await prisma.profile.update({
+      where: { userId },
+      data: { name, age: parseInt(age), gender, occupation, currentStep },
+    });
+
+    res.json({ success: true, profile });
+  } catch (err) {
+    console.log(err);
+    res
+      .status(500)
+      .json({ success: false, message: "Basic info update failed" });
+  }
+};
+
+/**
+ * 2️⃣ BUDGET & LOCALITIES
+ */
+export const updateBudgetLocation = async (req, res) => {
+  try {
+    const { budgetMin, budgetMax, preferredAreas, moveInDate, currentStep } =
+      req.body;
+    const userId = req.user.userId;
+
+    const profile = await prisma.profile.update({
+      where: { userId },
       data: {
-        userId: d.userId,
-        name: d.name,
-        age: d.age,
-        gender: d.gender,
-        occupation: d.occupation ?? null,
-        bio: d.bio ?? null,
-
-        budgetMin: d.budgetMin,
-        budgetMax: d.budgetMax,
-        preferredAreas: Array.isArray(d.preferredAreas) ? d.preferredAreas : [],
-        moveInDate: d.moveInDate ? new Date(d.moveInDate) : null,
-
-        sleepHabit: d.sleepHabit ?? null,
-        cleanliness: d.cleanliness ?? null,
-        smoking: d.smoking ?? false,
-        drinking: d.drinking ?? false,
-        pets: d.pets ?? false,
-        socialVibe: d.socialVibe ?? null,
-
-        lastSeen: d.lastSeen ? new Date(d.lastSeen) : null,
+        budgetMin,
+        budgetMax,
+        preferredAreas,
+        moveInDate: moveInDate ? new Date(moveInDate) : null,
+        currentStep,
       },
     });
-    return res.status(201).json(profile);
-  } catch (e) {
-    // P2002 = unique constraint violation (e.g., userId unique)
-    if (e?.code === "P2002") return res.status(409).json({ error: "Profile already exists for this user" });
-    return res.status(500).json({ error: "Server error", details: e?.message });
+
+    res.json({ success: true, profile });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Budget update failed" });
   }
 };
 
-// LIST Profiles (filters: gender, area, minBudget, maxBudget)
-exports.listProfiles = async (req, res) => {
-  const { limit = "20", offset = "0", gender, area, minBudget, maxBudget } = req.query;
-
-  const where = {};
-  if (gender) where.gender = gender;
-  if (area) where.preferredAreas = { has: area }; // array contains
-  if (minBudget || maxBudget) {
-    where.AND = [
-      ...(minBudget ? [{ budgetMin: { gte: Number(minBudget) } }] : []),
-      ...(maxBudget ? [{ budgetMax: { lte: Number(maxBudget) } }] : []),
-    ];
-  }
-
+/**
+ * 3️⃣ LIFESTYLE (CHIPS)
+ */
+export const updateLifestyle = async (req, res) => {
   try {
-    const profiles = await prisma.profile.findMany({
-      where,
-      take: Math.min(Number(limit) || 20, 100),
-      skip: Number(offset) || 0,
-      orderBy: { updatedAt: "desc" },
-    });
-    return res.json(profiles);
-  } catch (e) {
-    return res.status(500).json({ error: "Server error", details: e?.message });
-  }
-};
+    const {
+      sleepHabit,
+      cleanliness,
+      smoking,
+      drinking,
+      pets,
+      socialVibe,
+      currentStep,
+    } = req.body;
 
-// GET Profile by id
-exports.getProfileById = async (req, res) => {
-  const profile = await prisma.profile.findUnique({ where: { id: req.params.id } });
-  if (!profile) return res.status(404).json({ error: "Profile not found" });
-  return res.json(profile);
-};
+    const userId = req.user.userId;
 
-// GET Profile by userId (1:1)
-exports.getProfileByUserId = async (req, res) => {
-  const profile = await prisma.profile.findUnique({ where: { userId: req.params.userId } });
-  if (!profile) return res.status(404).json({ error: "Profile not found for user" });
-  return res.json(profile);
-};
-
-// UPDATE Profile (partial)
-exports.updateProfile = async (req, res) => {
-  const errors = validateUpdate(req.body);
-  if (errors.length) return res.status(400).json({ errors });
-
-  const d = req.body;
-
-  try {
-    const updated = await prisma.profile.update({
-      where: { id: req.params.id },
+    const profile = await prisma.profile.update({
+      where: { userId },
       data: {
-        ...(d.name !== undefined ? { name: d.name } : {}),
-        ...(d.age !== undefined ? { age: d.age } : {}),
-        ...(d.gender !== undefined ? { gender: d.gender } : {}),
-        ...(d.occupation !== undefined ? { occupation: d.occupation } : {}),
-        ...(d.bio !== undefined ? { bio: d.bio } : {}),
-
-        ...(d.budgetMin !== undefined ? { budgetMin: d.budgetMin } : {}),
-        ...(d.budgetMax !== undefined ? { budgetMax: d.budgetMax } : {}),
-        ...(d.preferredAreas !== undefined ? { preferredAreas: d.preferredAreas } : {}),
-        ...(d.moveInDate !== undefined ? { moveInDate: d.moveInDate ? new Date(d.moveInDate) : null } : {}),
-
-        ...(d.sleepHabit !== undefined ? { sleepHabit: d.sleepHabit } : {}),
-        ...(d.cleanliness !== undefined ? { cleanliness: d.cleanliness } : {}),
-        ...(d.smoking !== undefined ? { smoking: d.smoking } : {}),
-        ...(d.drinking !== undefined ? { drinking: d.drinking } : {}),
-        ...(d.pets !== undefined ? { pets: d.pets } : {}),
-        ...(d.socialVibe !== undefined ? { socialVibe: d.socialVibe } : {}),
-        ...(d.lastSeen !== undefined ? { lastSeen: d.lastSeen ? new Date(d.lastSeen) : null } : {}),
+        sleepHabit,
+        cleanliness,
+        smoking,
+        drinking,
+        pets,
+        socialVibe,
+        currentStep,
       },
     });
-    return res.json(updated);
-  } catch (e) {
-    if (e?.code === "P2025") return res.status(404).json({ error: "Profile not found" });
-    return res.status(500).json({ error: "Server error", details: e?.message });
+
+    res.json({ success: true, profile });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ success: false, message: "Lifestyle update failed" });
   }
 };
 
-// DELETE Profile
-exports.deleteProfile = async (req, res) => {
+/**
+ * 4️⃣ PHOTOS (ADD)
+ * expects uploadedUrls[] from cloud upload middleware
+ */
+export const uploadPhoto = async (req, res) => {
   try {
-    await prisma.profile.delete({ where: { id: req.params.id } });
-    return res.status(204).send();
-  } catch (e) {
-    if (e?.code === "P2025") return res.status(404).json({ error: "Profile not found" });
-    return res.status(500).json({ error: "Server error", details: e?.message });
+    const userId = req.user.userId;
+    const { currentStep } = req.body;
+    if (!req.file) {
+      return res
+        .status(400)
+        .json({ success: false, message: "No file uploaded." });
+    }
+
+    const filePath = req.file.path; // Multer stores the file path in req.file.path
+
+    const profile = await prisma.profile.update({
+      where: { userId },
+      data: { currentStep: parseInt(currentStep) },
+    });
+
+    if (!profile) {
+      // If profile not found, delete the uploaded file
+      fs.unlinkSync(filePath); // Delete the uploaded file
+      return res
+        .status(404)
+        .json({ success: false, message: "Profile not found" });
+    }
+
+    const photo = await prisma.photo.create({
+      data: {
+        profileId: profile.id,
+        url: filePath, // Store the path of the uploaded file
+      },
+    });
+
+    res.json({
+      success: true,
+      message: "Photo uploaded successfully",
+      photoPath: filePath,
+      photoId: photo.id,
+    });
+  } catch (err) {
+    // If an error occurs, delete the uploaded file if it exists
+    if (req.file && req.file.path) {
+      fs.unlinkSync(req.file.path);
+    }
+    console.error("Error uploading photo:", err); // Log the actual error
+    res.status(500).json({
+      success: false,
+      message: "Photo upload failed",
+      error: err.message,
+    });
+  }
+};
+
+/**
+ * 4️⃣ PHOTOS (DELETE)
+ */
+export const deletePhoto = async (req, res) => {
+  try {
+    const { photoId } = req.params;
+
+    await prisma.photo.delete({
+      where: { id: photoId },
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Delete photo failed" });
+  }
+};
+
+/**
+ * 5️⃣ BIO
+ */
+export const updateBio = async (req, res) => {
+  try {
+    const { bio, currentStep } = req.body;
+    const userId = req.user.userId;
+
+    const profile = await prisma.profile.update({
+      where: { userId },
+      data: { bio, currentStep },
+    });
+
+    res.json({ success: true, profile });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Bio update failed" });
+  }
+};
+
+/**
+ * 6️⃣ GET FULL PROFILE
+ */
+export const getMyProfile = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        phone: true,
+        isVerified: true,
+        premiumStatus: true,
+        profile: {
+          select: {
+            name: true,
+            age: true,
+            occupation: true,
+            gender: true,
+            photos: true,
+          },
+        },
+      },
+    });
+
+    res.json({ success: true, user });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ success: false, message: "Fetch profile failed" });
   }
 };

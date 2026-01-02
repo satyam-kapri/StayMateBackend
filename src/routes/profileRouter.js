@@ -1,39 +1,26 @@
 import { Router } from "express";
-import { verifyToken } from "../controllers/profileController.js";
+import {
+  updateBasicInfo,
+  updateBudgetLocation,
+  updateLifestyle,
+  uploadPhoto,
+  deletePhoto,
+  updateBio,
+  getMyProfile
+} from "../controllers/profileController.js";
+import upload from "../middleware/multerUpload.js";
+import authMiddleware from "../middleware/authMiddleware.js";
 
-const { Router } = require("express");
-const {
-  createProfile,
-  listProfiles,
-  getProfileById,
-  getProfileByUserId,
-  updateProfile,
-  deleteProfile,
-} = require("../controllers/profileController");
+const profileRouter = Router();
 
-const router = Router();
+profileRouter.get("/me", authMiddleware, getMyProfile);
 
-// Create
-router.post("/profiles", createProfile);
+profileRouter.patch("/basic-info", authMiddleware, updateBasicInfo);
+profileRouter.patch("/budget-location", authMiddleware, updateBudgetLocation);
+profileRouter.patch("/lifestyle", authMiddleware, updateLifestyle);
+profileRouter.patch("/bio", authMiddleware, updateBio);
 
-// List (filters: gender, area, minBudget, maxBudget)
-router.get("/profiles", listProfiles);
-
-// Get by profile id
-router.get("/profiles/:id", getProfileById);
-
-// Get by userId (1:1)
-router.get("/users/:userId/profile", getProfileByUserId);
-
-// Update (partial)
-router.patch("/profiles/:id", updateProfile);
-
-// Delete
-router.delete("/profiles/:id", deleteProfile);
-
-module.exports = router;
-
+profileRouter.post("/photo", authMiddleware, upload, uploadPhoto);
+profileRouter.delete("/photo/:photoId", authMiddleware, deletePhoto);
 
 export default profileRouter;
-
-
