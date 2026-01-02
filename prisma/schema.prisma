@@ -24,12 +24,15 @@ model User {
   updatedAt         DateTime          @updatedAt
 
   // Profile Relations
-  profile           Profile?
+  profile           Profile? 
   
   // Interaction Relations
   sentMatches       Match[]           @relation("MatchesSent")
   receivedMatches   Match[]           @relation("MatchesReceived")
   
+chatsAsUser1 Chat[] @relation("ChatUser1")
+ chatsAsUser2 Chat[] @relation("ChatUser2")
+ sentMessages Message[]
 }
 
 // ---  Profile & Lifestyle Survey ---
@@ -44,24 +47,25 @@ model Profile {
   gender            Gender
   occupation        String?           // e.g., "Student/Designer"
   bio               String?           @db.VarChar(500)
-  
+
   // Preferences & Location
   budgetMin         Float
   budgetMax         Float
   preferredAreas    String[]          // Delhi, Gurgaon, Noida 
   moveInDate        DateTime?
   
-  // Lifestyle Survey  
-  sleepHabit        SleepHabit?       // Early bird/Night owl
-  cleanliness       Level?            // High/Medium/Low
-  smoking           Boolean           @default(false)
-  drinking          Boolean           @default(false)
-  pets              Boolean           @default(false)
-  socialVibe        SocialVibe?       // Quiet/Social
+  // Lifestyle Survey 
+  sleepHabit       PreferenceLevel @default(SOMETIMES)
+  cleanliness      PreferenceLevel @default(SOMETIMES)
+  smoking          PreferenceLevel @default(SOMETIMES)
+  drinking         PreferenceLevel @default(SOMETIMES)
+  pets             PreferenceLevel @default(SOMETIMES)
+  socialVibe       PreferenceLevel @default(SOMETIMES)
   
   // Media 
   photos            Photo[]
   
+  currentStep       Int            @default(0)        
   lastSeen          DateTime?
 }
 
@@ -114,19 +118,34 @@ enum MatchStatus {
   CONNECTED // Mutual Connect 
   SKIPPED
 }
-
-enum SleepHabit {
-  EARLY_BIRD
-  NIGHT_OWL
+enum PreferenceLevel {
+  NO
+  SOMETIMES
+  YES
 }
-
-enum Level {
-  HIGH
-  MEDIUM
-  LOW
+model Chat {
+  id        String   @id @default(uuid())
+  user1Id   String
+  user2Id   String
+  user1     User     @relation("ChatUser1", fields: [user1Id], references: [id])
+  user2     User     @relation("ChatUser2", fields: [user2Id], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  messages  Message[]
+  
+  @@unique([user1Id, user2Id])
 }
-
-enum SocialVibe {
-  QUIET
-  SOCIAL
+model Message {
+  id        String   @id @default(uuid())
+  chatId    String
+  chat      Chat     @relation(fields: [chatId], references: [id])
+  senderId  String
+  sender    User     @relation(fields: [senderId], references: [id])
+  content   String
+  read      Boolean  @default(false)
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+  
+  @@index([chatId, createdAt])
 }
