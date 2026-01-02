@@ -121,7 +121,7 @@ export const uploadPhoto = async (req, res) => {
         .json({ success: false, message: "No file uploaded." });
     }
 
-    const filePath = req.file.path; // Multer stores the file path in req.file.path
+    const filePath = req.file.location;
 
     const profile = await prisma.profile.update({
       where: { userId },
