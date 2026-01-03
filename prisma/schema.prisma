@@ -145,6 +145,7 @@ model Message {
   content   String
   read      Boolean  @default(false)
   readAt    DateTime?
+  isAdminMessage Boolean?
   createdAt DateTime @default(now())
   
   @@index([chatId, createdAt])

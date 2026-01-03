@@ -154,6 +154,7 @@ export const respondToMatch = async (req, res) => {
           content:
             "🎉 You are now connected! Say hello and start your conversation.",
           read: false,
+          isAdminMesssage: true,
         },
       });
       const io = getIO();
