@@ -1,14 +1,13 @@
 version: "3.8"
 
 services:
-  # 1. Your Node.js Application
+  # 1. Your Node.js Application (UNCHANGED)
   backend:
     build:
       context: .
       dockerfile: Dockerfile
-    # REMOVED: ports: "3000:3000" (We don't want the world accessing this directly)
     expose:
-      - "3000" # Only exposes port to Nginx, not the public internet
+      - "3000"
     environment:
       DATABASE_URL: ${DATABASE_URL}
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
@@ -21,30 +20,33 @@ services:
     networks:
       - app_network
 
-  # 2. Prisma Migrations (Runs once then stops)
+  # 2. Prisma Migrations (UNCHANGED)
   migrations:
     build:
       context: .
       dockerfile: Dockerfile
     environment:
       DATABASE_URL: ${DATABASE_URL}
-    # Using 'deploy' makes sure it doesn't ask for user input
     command: npx prisma migrate deploy
     networks:
       - app_network
-    # Optional: If you remove 'profiles', it runs every time you 'up'. 
-    # If you keep 'profiles', you must run: docker compose --profile migrate up
     profiles:
-      - migrate 
+      - migrate
 
-  # 3. Nginx Reverse Proxy
-  nginx:
-    image: nginx:latest
+  # 3. HTTPS Portal (REPLACES your Nginx service)
+  https-portal:
+    image: steveltn/https-portal:1
     ports:
       - "80:80"
-    restart: always
+      - "443:443" # HTTPS port
+    environment:
+      # 👇 CHANGE THIS IP to your actual AWS Public IP 👇
+      DOMAINS: "15.206.178.19.nip.io -> http://backend:3000"
+
+      # 'production' gives you a real green lock.
+      STAGE: "production"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - https-portal-data:/var/lib/https-portal
     depends_on:
       - backend
     networks:
@@ -54,3 +56,7 @@ services:
 networks:
   app_network:
     driver: bridge
+
+# 5. Volume for certificate storage
+volumes:
+  https-portal-data:
