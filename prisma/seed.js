@@ -8,43 +8,47 @@ import { faker } from "@faker-js/faker";
 
 const prisma = new PrismaClient();
 
-// High-quality image URLs by gender
-const getProfileImageUrls = (gender, count = 2) => {
-  const baseUrls = {
-    [Gender.MALE]: [
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face",
-      "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w-400&h=400&fit=crop&crop=face",
-      "https://images.unsplash.com/photo-1507591064344-4c6ce005-128?w=400&h=400&fit=crop&crop=face",
-      "https://images.unsplash.com/photo-1513956589380-bad6acb9b9d4?w=400&h=400&fit=crop",
-      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop",
-    ],
-    [Gender.FEMALE]: [
-      "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400&h=400&fit=crop&crop=face",
-      "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&h=400&fit=crop&crop=face",
-      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop",
-      "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=400&h=400&fit=crop",
-      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop",
-    ],
-    [Gender.OTHER]: [
-      "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&h=400&fit=crop",
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop",
-      "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400&h=400&fit=crop",
-      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop",
-      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop",
-    ],
-  };
+// ------------------------------------------------------------------
+// 1. CURATED IMAGE POOLS (High Quality Portraits)
+// ------------------------------------------------------------------
 
-  const urls = baseUrls[gender];
-  const selected = new Set();
+// Specific Unsplash Image IDs to ensure high quality & realistic faces
+const MALE_IMAGE_IDS = [
+  "Mt7l7kHe33k", "iFgRcqHznqg", "7YVZYZeITc8", "WNoLnJo7tS8",
+  "dANjuKw5XFk", "IF9TK5Uy-KI", "ilW1iB9uXUQ", "poZIJp2178s",
+  "5aGUyCW_PJw", "6Nub980bI3I", "mEZ3PoFGs_k", "ZHvM3XIOHoE",
+  "DItYlc26zVI", "rDEOVtE7vOs", "cdksyTqBeU0", "O3ymvT7Wf9U",
+  "jmURdhtm7k4", "Yn57cJC4D5E", "aQcE3gDSzbw", "8PMvB42mCUc",
+  "C8Ta0gwPbQg", "AG712I-jEFE", "NTPyJPj5mIQ", "t6BUn_WbE94"
+];
 
-  while (selected.size < count && selected.size < urls.length) {
-    selected.add(urls[Math.floor(Math.random() * urls.length)]);
+const FEMALE_IMAGE_IDS = [
+  "9UVmlIb0wJU", "jzz_33GNpnM", "AB6502DBHj8", "rDEOVtE7vOs",
+  "bRC7rWnO3xY", "FVh_yqLR9eA", "0fN7Fxv1eWA", "QXevDflbl8A",
+  "u3WmDy54tpY", "X6Uj51n5CE8", "Zz5LQe-VSMY", "Tjbk79XB82M",
+  "cnCVj-2F6nU", "c_GmwfHBDzk", "DLKR_x3T_7s", "AZ60iF1Zc_I",
+  "pAtA8xe_iVM", "vSuQ1_24hFA", "dZ4Yj8h0Qf0", "W7b3eDUb_2I",
+  "6Whd7pqw3DA", "n4KewLKFOZw", "rriAI0nhcbc", "XQWxrCLwvQA"
+];
+
+// Helper to construct URL
+const makeUrl = (id: string) => 
+  `https://images.unsplash.com/photo-${id}?w=600&h=600&fit=crop&crop=faces&q=80`;
+
+// Fisher-Yates Shuffle to randomize the pool order
+const shuffleArray = <T>(array: T[]): T[] => {
+  const newArr = [...array];
+  for (let i = newArr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArr[i], newArr[j]] = [newArr[j], newArr[i]];
   }
-
-  return Array.from(selected);
+  return newArr;
 };
 
-// Indian cities with realistic rental prices
+// ------------------------------------------------------------------
+// 2. DATA CONSTANTS
+// ------------------------------------------------------------------
+
 const indianCities = [
   { name: "Delhi", minRent: 8000, maxRent: 30000 },
   { name: "Gurugram", minRent: 10000, maxRent: 35000 },
@@ -56,92 +60,33 @@ const indianCities = [
   { name: "Pune", minRent: 8000, maxRent: 30000 },
 ];
 
-// Common Indian professions
 const indianOccupations = [
-  "Software Engineer",
-  "Data Analyst",
-  "Marketing Manager",
-  "Product Manager",
-  "Doctor",
-  "CA",
-  "Teacher",
-  "Graphic Designer",
-  "Content Writer",
-  "Sales Executive",
-  "Business Analyst",
-  "Architect",
-  "Lawyer",
-  "Financial Advisor",
-  "HR Manager",
-  "Operations Manager",
-  "Research Scientist",
-  "Consultant",
-  "Entrepreneur",
+  "Software Engineer", "Data Analyst", "Marketing Manager", "Product Manager",
+  "Doctor", "CA", "Teacher", "Graphic Designer", "Content Writer",
+  "Sales Executive", "Business Analyst", "Architect", "Lawyer",
+  "Financial Advisor", "HR Manager", "UX Designer", "Civil Engineer"
 ];
 
-// Indian first names by gender
-const getIndianName = (gender) => {
+const getIndianName = (gender: Gender) => {
   const maleFirstNames = [
-    "Rahul",
-    "Raj",
-    "Amit",
-    "Vikram",
-    "Suresh",
-    "Rohan",
-    "Arjun",
-    "Karan",
-    "Aditya",
-    "Sanjay",
-    "Deepak",
-    "Manoj",
-    "Nikhil",
-    "Prateek",
-    "Vishal",
+    "Rahul", "Raj", "Amit", "Vikram", "Suresh", "Rohan", "Arjun", "Karan",
+    "Aditya", "Sanjay", "Deepak", "Manoj", "Nikhil", "Prateek", "Vishal",
+    "Kabir", "Aryan", "Dhruv", "Ishaan", "Vihaan"
   ];
 
   const femaleFirstNames = [
-    "Priya",
-    "Anjali",
-    "Neha",
-    "Ritu",
-    "Sonia",
-    "Divya",
-    "Pooja",
-    "Meera",
-    "Kavita",
-    "Shreya",
-    "Aditi",
-    "Swati",
-    "Nisha",
-    "Tanvi",
-    "Isha",
+    "Priya", "Anjali", "Neha", "Ritu", "Sonia", "Divya", "Pooja", "Meera",
+    "Kavita", "Shreya", "Aditi", "Swati", "Nisha", "Tanvi", "Isha",
+    "Anya", "Diya", "Ananya", "Zara", "Sana"
   ];
 
-  const otherFirstNames = [...maleFirstNames, ...femaleFirstNames];
   const lastNames = [
-    "Sharma",
-    "Verma",
-    "Patel",
-    "Singh",
-    "Kumar",
-    "Gupta",
-    "Joshi",
-    "Reddy",
-    "Das",
-    "Nair",
-    "Menon",
-    "Choudhary",
-    "Malhotra",
-    "Saxena",
-    "Kapoor",
+    "Sharma", "Verma", "Patel", "Singh", "Kumar", "Gupta", "Joshi", "Reddy",
+    "Das", "Nair", "Menon", "Choudhary", "Malhotra", "Saxena", "Kapoor",
+    "Bhatia", "Mehta", "Jain", "Aggarwal", "Iyer"
   ];
 
-  const firstNames =
-    gender === Gender.MALE
-      ? maleFirstNames
-      : gender === Gender.FEMALE
-      ? femaleFirstNames
-      : otherFirstNames;
+  const firstNames = gender === Gender.MALE ? maleFirstNames : femaleFirstNames;
 
   return {
     firstName: faker.helpers.arrayElement(firstNames),
@@ -149,10 +94,12 @@ const getIndianName = (gender) => {
   };
 };
 
+// ------------------------------------------------------------------
+// 3. MAIN SCRIPT
+// ------------------------------------------------------------------
+
 async function main() {
   console.log("🧹 Cleaning database...");
-
-  // Use transaction for better performance
   await prisma.$transaction([
     prisma.photo.deleteMany(),
     prisma.profile.deleteMany(),
@@ -160,48 +107,59 @@ async function main() {
     prisma.user.deleteMany(),
   ]);
 
-  console.log("🌱 Seeding 20 users...");
+  console.log("🌱 Preparing image pools...");
+  // Shuffle pools once at the start so we can "pop" unique images
+  const availableMaleImages = shuffleArray(MALE_IMAGE_IDS);
+  const availableFemaleImages = shuffleArray(FEMALE_IMAGE_IDS);
+  
+  // Create a pool for "Other" gender mixing both
+  const availableOtherImages = shuffleArray([...MALE_IMAGE_IDS, ...FEMALE_IMAGE_IDS]);
 
+  console.log("🚀 Seeding 20 users...");
   const genders = Object.values(Gender);
-  const prefLevels = Object.values(PreferenceLevel);
 
   for (let i = 0; i < 20; i++) {
     const gender = genders[Math.floor(Math.random() * genders.length)];
     const { firstName, lastName } = getIndianName(gender);
     const fullName = `${firstName} ${lastName}`;
 
-    // Generate realistic Indian phone number
-    const indianPhone = `+91${faker.string.numeric({
-      length: 10,
-      allowLeadingZeros: false,
-    })}`;
+    // --- NON-REPEATING IMAGE LOGIC ---
+    // We try to take an image from the pool. If pool is empty, we fallback to random
+    let selectedImageIds: string[] = [];
+    const numPhotos = faker.number.int({ min: 2, max: 4 });
 
-    // Select realistic city and budget
+    for (let p = 0; p < numPhotos; p++) {
+      let imgId;
+      if (gender === Gender.MALE && availableMaleImages.length > 0) {
+        imgId = availableMaleImages.pop();
+      } else if (gender === Gender.FEMALE && availableFemaleImages.length > 0) {
+        imgId = availableFemaleImages.pop();
+      } else if (gender === Gender.OTHER && availableOtherImages.length > 0) {
+        imgId = availableOtherImages.pop();
+      } else {
+        // Fallback if we run out of unique predefined images
+        imgId = faker.helpers.arrayElement(
+          gender === Gender.MALE ? MALE_IMAGE_IDS : FEMALE_IMAGE_IDS
+        );
+      }
+      if (imgId) selectedImageIds.push(imgId);
+    }
+    // ---------------------------------
+
+    const indianPhone = `+91${faker.string.numeric({ length: 10, allowLeadingZeros: false })}`;
     const city = faker.helpers.arrayElement(indianCities);
-    const preferredAreas = faker.helpers.arrayElements(
-      indianCities.map((c) => c.name),
-      { min: 1, max: 3 }
-    );
+    const preferredAreas = faker.helpers.arrayElements(indianCities.map((c) => c.name), { min: 1, max: 3 });
 
-    // Calculate realistic budget based on selected areas
-    const areaStats = indianCities.filter((c) =>
-      preferredAreas.includes(c.name)
-    );
+    // Budget Logic
+    const areaStats = indianCities.filter((c) => preferredAreas.includes(c.name));
     const budgetMin = Math.min(...areaStats.map((a) => a.minRent));
-    const budgetMax = Math.max(...areaStats.map((a) => a.maxRent)) * 1.2; // 20% buffer
+    const budgetMax = Math.max(...areaStats.map((a) => a.maxRent)) * 1.2;
 
-    // Get gender-specific images
-    const photoUrls = getProfileImageUrls(
-      gender,
-      faker.number.int({ min: 1, max: 3 })
-    );
-
-    // Create User with Profile and Photos
     await prisma.user.create({
       data: {
         phone: indianPhone,
         firebaseUid: faker.string.uuid(),
-        isVerified: faker.datatype.boolean(0.8), // 80% verified
+        isVerified: faker.datatype.boolean(0.8),
         premiumStatus: faker.helpers.arrayElement([
           PremiumStatus.FREE,
           PremiumStatus.PREMIUM,
@@ -212,56 +170,38 @@ async function main() {
         profile: {
           create: {
             name: fullName,
-            age: faker.number.int({ min: 21, max: 35 }), // More realistic age range
+            age: faker.number.int({ min: 21, max: 32 }),
             gender,
             occupation: faker.helpers.arrayElement(indianOccupations),
             bio: faker.lorem.sentences({ min: 1, max: 2 }),
-            budgetMin: Math.round(budgetMin / 1000) * 1000, // Round to nearest 1000
+            budgetMin: Math.round(budgetMin / 1000) * 1000,
             budgetMax: Math.round(budgetMax / 1000) * 1000,
             preferredAreas,
             moveInDate: faker.date.between({
               from: new Date(),
-              to: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), // Within 60 days
+              to: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
             }),
-
-            // Lifestyle Survey with weighted preferences
-            sleepHabit: faker.helpers.weightedArrayElement([
-              { weight: 40, value: PreferenceLevel.YES }, // 40% early risers
-              { weight: 30, value: PreferenceLevel.NO }, // 30% night owls
-              { weight: 30, value: PreferenceLevel.SOMETIMES },
-            ]),
+            
+            // Preferences
+            sleepHabit: faker.helpers.arrayElement(Object.values(PreferenceLevel)),
             cleanliness: faker.helpers.weightedArrayElement([
-              { weight: 60, value: PreferenceLevel.YES }, // 60% prefer clean
-              { weight: 20, value: PreferenceLevel.NO },
-              { weight: 20, value: PreferenceLevel.SOMETIMES },
+                { weight: 70, value: PreferenceLevel.YES }, 
+                { weight: 30, value: PreferenceLevel.SOMETIMES }
             ]),
             smoking: faker.helpers.weightedArrayElement([
-              { weight: 80, value: PreferenceLevel.NO }, // 80% non-smokers
-              { weight: 15, value: PreferenceLevel.SOMETIMES },
-              { weight: 5, value: PreferenceLevel.YES },
+                { weight: 80, value: PreferenceLevel.NO }, 
+                { weight: 20, value: PreferenceLevel.YES }
             ]),
-            drinking: faker.helpers.weightedArrayElement([
-              { weight: 40, value: PreferenceLevel.NO }, // 40% teetotalers
-              { weight: 40, value: PreferenceLevel.SOMETIMES },
-              { weight: 20, value: PreferenceLevel.YES },
-            ]),
-            pets: faker.helpers.weightedArrayElement([
-              { weight: 30, value: PreferenceLevel.YES },
-              { weight: 50, value: PreferenceLevel.SOMETIMES },
-              { weight: 20, value: PreferenceLevel.NO },
-            ]),
-            socialVibe: faker.helpers.weightedArrayElement([
-              { weight: 40, value: PreferenceLevel.YES }, // 40% social
-              { weight: 30, value: PreferenceLevel.SOMETIMES },
-              { weight: 30, value: PreferenceLevel.NO },
-            ]),
-
+            drinking: faker.helpers.arrayElement(Object.values(PreferenceLevel)),
+            pets: faker.helpers.arrayElement(Object.values(PreferenceLevel)),
+            socialVibe: faker.helpers.arrayElement(Object.values(PreferenceLevel)),
+            
             currentStep: 5,
 
-            // Photos with gender-specific images
+            // Create Photos
             photos: {
-              create: photoUrls.map((url, index) => ({
-                url,
+              create: selectedImageIds.map((id, index) => ({
+                url: makeUrl(id),
                 order: index,
               })),
             },
@@ -270,20 +210,15 @@ async function main() {
       },
     });
 
-    // Progress indicator
-    if ((i + 1) % 5 === 0) {
-      console.log(`   Created ${i + 1} users...`);
-    }
+    if ((i + 1) % 5 === 0) console.log(`   Created ${i + 1} users...`);
   }
 
   console.log("✅ Seeding complete!");
-  console.log(`🎯 Created 20 users with realistic Indian data`);
-  console.log(`📸 Used gender-specific high-quality images`);
 }
 
 main()
   .catch((e) => {
-    console.error("❌ Seeding failed:", e);
+    console.error(e);
     process.exit(1);
   })
   .finally(async () => {
