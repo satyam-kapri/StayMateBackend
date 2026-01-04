@@ -37,7 +37,7 @@ export const getMatchFeed = async (req, res) => {
     // Build profile where conditions
     const profileWhereConditions = {
       userId: { notIn: Array.from(excludedIds) },
-      user: { isVerified: true },
+      // user: { isVerified: true },
     };
 
     // Add filters
@@ -81,7 +81,7 @@ export const getMatchFeed = async (req, res) => {
         user: {
           select: {
             id: true,
-            isVerified: true,
+            // isVerified: true,
           },
         },
         photos: true,
