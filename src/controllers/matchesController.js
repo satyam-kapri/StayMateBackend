@@ -94,9 +94,9 @@ export const getMatchFeed = async (req, res) => {
         profile: p,
         compatibilityScore: calculateCompatibility(me.profile, p),
       }))
-      .filter((x) => x.compatibilityScore >= 50)
+      // .filter((x) => x.compatibilityScore >= 10)
       .sort((a, b) => b.compatibilityScore - a.compatibilityScore)
-      .slice(0, 20);
+      .slice(0, 50);
 
     res.json({ success: true, feed });
   } catch (err) {
