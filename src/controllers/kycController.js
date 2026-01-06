@@ -24,6 +24,7 @@ export const startKYC = async (req, res) => {
 
     if (existingKYC) {
       const kyc = await prisma.kYCDocument.update({
+        where: { id: existingKYC.id },
         data: {
           idType: idType,
           status: "PENDING",
