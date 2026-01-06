@@ -297,7 +297,6 @@ export const submitKYC = async (req, res) => {
     const updatedKYC = await prisma.kYCDocument.update({
       where: { id: kycId },
       data: {
-        isSubmitted: true,
         submittedAt: new Date(),
         step: 5, // Submitted for review
       },
