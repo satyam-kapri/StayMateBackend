@@ -2,6 +2,9 @@
 CREATE TYPE "Gender" AS ENUM ('MALE', 'FEMALE', 'OTHER');
 
 -- CreateEnum
+CREATE TYPE "IdType" AS ENUM ('AADHAAR', 'PAN', 'DRIVING_LICENSE');
+
+-- CreateEnum
 CREATE TYPE "PremiumStatus" AS ENUM ('FREE', 'PREMIUM');
 
 -- CreateEnum
@@ -104,7 +107,7 @@ CREATE TABLE "Message" (
 CREATE TABLE "KYCDocument" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
-    "idType" TEXT NOT NULL,
+    "idType" "IdType" NOT NULL,
     "idFrontUrl" TEXT NOT NULL,
     "idBackUrl" TEXT,
     "selfieUrl" TEXT NOT NULL,

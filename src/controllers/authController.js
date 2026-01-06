@@ -75,6 +75,7 @@ export const fakeAuth = async (req, res) => {
         isVerified: true,
         firebaseUid: true,
         premiumStatus: true,
+        status: true,
         profile: {
           select: {
             name: true,

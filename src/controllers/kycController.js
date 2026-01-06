@@ -43,7 +43,7 @@ export const startKYC = async (req, res) => {
     res.status(201).json({
       success: true,
       message: "KYC process started",
-      data: kyc,
+      kyc: kyc,
     });
   } catch (error) {
     console.error("Start KYC error:", error);
@@ -102,7 +102,7 @@ export const uploadIDFront = async (req, res) => {
     res.json({
       success: true,
       message: "ID front uploaded successfully",
-      data: updatedKYC,
+      kyc: updatedKYC,
     });
   } catch (error) {
     console.error("Upload ID front error:", error);
@@ -169,7 +169,7 @@ export const uploadIDBack = async (req, res) => {
     res.json({
       success: true,
       message: "ID back uploaded successfully",
-      data: updatedKYC,
+      kyc: updatedKYC,
     });
   } catch (error) {
     console.error("Upload ID back error:", error);
@@ -236,7 +236,7 @@ export const uploadSelfie = async (req, res) => {
     res.json({
       success: true,
       message: "Selfie uploaded successfully",
-      data: updatedKYC,
+      kyc: updatedKYC,
     });
   } catch (error) {
     console.error("Upload selfie error:", error);
@@ -297,7 +297,7 @@ export const submitKYC = async (req, res) => {
     res.json({
       success: true,
       message: "KYC submitted for review successfully",
-      data: updatedKYC,
+      kyc: updatedKYC,
     });
   } catch (error) {
     console.error("Submit KYC error:", error);
@@ -327,7 +327,7 @@ export const getKYCStatus = async (req, res) => {
 
     res.json({
       success: true,
-      data: kyc,
+      kyc: kyc,
     });
   } catch (error) {
     console.error("Get KYC status error:", error);
@@ -576,7 +576,6 @@ export const getKYCStats = async (req, res) => {
     const totalPending = await prisma.kYCDocument.count({
       where: {
         status: "PENDING",
-        isSubmitted: true,
       },
     });
 

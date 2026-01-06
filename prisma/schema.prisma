@@ -53,7 +53,7 @@ model Profile {
   // Preferences & Location
   budgetMin         Float
   budgetMax         Float
-  preferredAreas    String[]          // Delhi, Gurgaon, Noida 
+  preferredAreas    Areas[]       
   moveInDate        DateTime?
   
   // Lifestyle Survey 
@@ -131,7 +131,7 @@ model KYCDocument {
   user            User     @relation(fields: [userId], references: [id])
   
   // Simple fields
-  idType          String   // aadhaar, pan, passport
+  idType          IdType
   idFrontUrl      String
   idBackUrl       String?
   selfieUrl       String
@@ -157,7 +157,11 @@ enum Gender {
   FEMALE
   OTHER
 }
-
+enum IdType{
+  AADHAAR
+  PAN
+  DRIVING_LICENSE
+}
 enum PremiumStatus {
   FREE
   PREMIUM
@@ -178,4 +182,10 @@ enum PreferenceLevel {
   NO
   SOMETIMES
   YES
+}
+enum Areas{
+  Delhi
+  Gurugram
+  Noida
+  Greater_Noida
 }
