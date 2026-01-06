@@ -456,7 +456,7 @@ export const getKYCById = async (req, res) => {
 export const approveKYC = async (req, res) => {
   try {
     const { id } = req.params;
-    const reviewedBy = req.user.userId;
+    const reviewerId = req.user.userId;
 
     const kyc = await prisma.kYCDocument.findUnique({
       where: { id: id },
@@ -481,7 +481,7 @@ export const approveKYC = async (req, res) => {
       data: {
         status: "VERIFIED",
         reviewedAt: new Date(),
-        reviewedBy: reviewedBy,
+        reviewerId: reviewerId,
         rejectionReason: "",
       },
     });
@@ -512,7 +512,7 @@ export const rejectKYC = async (req, res) => {
   try {
     const { id } = req.params;
     const { rejectionReason } = req.body;
-    const reviewedBy = req.user.userId;
+    const reviewerId = req.user.userId;
 
     if (!rejectionReason || rejectionReason.trim() === "") {
       return res.status(400).json({
@@ -545,7 +545,7 @@ export const rejectKYC = async (req, res) => {
         status: "FLAGGED",
         rejectionReason: rejectionReason,
         reviewedAt: new Date(),
-        reviewedBy: reviewedBy,
+        reviewerId: reviewerId,
       },
     });
     await prisma.user.update({
