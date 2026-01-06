@@ -487,6 +487,7 @@ export const approveKYC = async (req, res) => {
       where: { id: kyc.userId },
       data: {
         status: "VERIFIED",
+        isVerified: true,
       },
     });
 
@@ -549,6 +550,7 @@ export const rejectKYC = async (req, res) => {
       where: { id: kyc.userId },
       data: {
         status: "FLAGGED",
+        isVerified: false,
       },
     });
     res.json({

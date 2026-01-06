@@ -14,7 +14,7 @@ import authMiddleware from "../middleware/authMiddleware.js";
 const profileRouter = Router();
 
 profileRouter.get("/me", authMiddleware, getMyProfile);
-
+profileRouter.get("/:id", authMiddleware, getUserProfile);
 profileRouter.patch("/basic-info", authMiddleware, updateBasicInfo);
 profileRouter.patch("/budget-location", authMiddleware, updateBudgetLocation);
 profileRouter.patch("/lifestyle", authMiddleware, updateLifestyle);

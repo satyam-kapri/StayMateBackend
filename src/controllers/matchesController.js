@@ -81,7 +81,7 @@ export const getMatchFeed = async (req, res) => {
         user: {
           select: {
             id: true,
-            // isVerified: true,
+            isVerified: true,
           },
         },
         photos: true,

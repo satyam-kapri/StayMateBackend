@@ -231,3 +231,33 @@ export const getMyProfile = async (req, res) => {
     res.status(500).json({ success: false, message: "Fetch profile failed" });
   }
 };
+
+export const getUserProfile = async (req, res) => {
+  try {
+    const { userId } = req.body;
+    if (!userId) {
+      res.status(400).json({
+        message: "userId not found!!",
+      });
+      return;
+    }
+
+    const profile = await prisma.profile.findUnique({
+      where: { userId: userId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            isVerified: true,
+          },
+        },
+        photos: true,
+      },
+    });
+
+    res.json({ success: true, profile });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ success: false, message: "Fetch profile failed" });
+  }
+};
