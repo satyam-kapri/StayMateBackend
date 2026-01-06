@@ -14,34 +14,23 @@ export const startKYC = async (req, res) => {
       });
     }
 
-    // Check for existing pending KYC
-    const existingKYC = await prisma.kYCDocument.findFirst({
+    // Prisma Upsert: Create if new, Update if exists
+    const kyc = await prisma.kYCDocument.upsert({
       where: {
-        userId: userId,
-        status: "PENDING",
+        userId: userId, // This must be a unique field in your schema
       },
-    });
-
-    if (existingKYC) {
-      const kyc = await prisma.kYCDocument.update({
-        where: { id: existingKYC.id },
-        data: {
-          idType: idType,
-          status: "PENDING",
-          step: 1,
-        },
-      });
-      res.status(201).json({
-        success: true,
-        message: "KYC process restarted",
-        kyc: kyc,
-      });
-      return;
-    }
-
-    // Create new KYC document
-    const kyc = await prisma.kYCDocument.create({
-      data: {
+      update: {
+        // If a record exists (Pending, Rejected, etc.), reset it
+        idType: idType,
+        status: "PENDING",
+        step: 1,
+        idFrontUrl: "", // Clear previous images on restart
+        idBackUrl: "",
+        selfieUrl: "",
+        rejectionReason: null, // Clear previous rejection reasons
+      },
+      create: {
+        // If no record exists, create new
         userId: userId,
         idType: idType,
         status: "PENDING",
