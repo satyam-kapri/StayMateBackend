@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 // STEP 1: Start KYC Process
 export const startKYC = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.userId;
     const { idType } = req.body;
 
     if (!idType) {
@@ -66,7 +66,7 @@ export const startKYC = async (req, res) => {
 // STEP 2: Upload ID Front
 export const uploadIDFront = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.userId;
     const { kycId } = req.body;
 
     if (!req.file) {
@@ -125,7 +125,7 @@ export const uploadIDFront = async (req, res) => {
 // STEP 3: Upload ID Back (Optional)
 export const uploadIDBack = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.userId;
     const { kycId } = req.body;
 
     if (!req.file) {
@@ -192,7 +192,7 @@ export const uploadIDBack = async (req, res) => {
 // STEP 4: Upload Selfie
 export const uploadSelfie = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.userId;
     const { kycId } = req.body;
 
     if (!req.file) {
@@ -259,7 +259,7 @@ export const uploadSelfie = async (req, res) => {
 // STEP 5: Submit KYC for Review
 export const submitKYC = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.userId;
     const { kycId } = req.body;
 
     if (!kycId) {
@@ -319,7 +319,7 @@ export const submitKYC = async (req, res) => {
 // Get KYC status
 export const getKYCStatus = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.userId;
 
     const kyc = await prisma.kYCDocument.findFirst({
       where: { userId: userId },
@@ -454,7 +454,7 @@ export const getKYCById = async (req, res) => {
 export const approveKYC = async (req, res) => {
   try {
     const { id } = req.params;
-    const reviewedBy = req.user.id;
+    const reviewedBy = req.user.userId;
 
     const kyc = await prisma.kYCDocument.findUnique({
       where: { id: id },
@@ -510,7 +510,7 @@ export const rejectKYC = async (req, res) => {
   try {
     const { id } = req.params;
     const { rejectionReason } = req.body;
-    const reviewedBy = req.user.id;
+    const reviewedBy = req.user.userId;
 
     if (!rejectionReason || rejectionReason.trim() === "") {
       return res.status(400).json({
