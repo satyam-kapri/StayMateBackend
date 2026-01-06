@@ -7,6 +7,7 @@ import {
   deletePhoto,
   updateBio,
   getMyProfile,
+  getUserProfile,
 } from "../controllers/profileController.js";
 import { upload } from "../middleware/multerUpload.js";
 import authMiddleware from "../middleware/authMiddleware.js";
