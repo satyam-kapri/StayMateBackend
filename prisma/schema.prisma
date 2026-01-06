@@ -22,7 +22,7 @@ model User {
   premiumStatus     PremiumStatus     @default(FREE)
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
-
+  status            VerificationStatus @default(PENDING)
   // Profile Relations
   profile           Profile? 
   
@@ -30,9 +30,11 @@ model User {
   sentMatches       Match[]           @relation("MatchesSent")
   receivedMatches   Match[]           @relation("MatchesReceived")
   
-chatsAsUser1 Chat[] @relation("ChatUser1")
+ chatsAsUser1 Chat[] @relation("ChatUser1")
  chatsAsUser2 Chat[] @relation("ChatUser2")
  sentMessages Message[]
+
+ kyc KYCDocument?
 }
 
 // ---  Profile & Lifestyle Survey ---
@@ -95,34 +97,7 @@ model Match {
   @@unique([requesterId, receiverId])
 }
 
-// --- Enums ---
-enum Gender {
-  MALE
-  FEMALE
-  OTHER
-}
 
-enum PremiumStatus {
-  FREE
-  PREMIUM
-}
-
-enum VerificationStatus {
-  PENDING
-  APPROVED
-  REJECTED
-}
-
-enum MatchStatus {
-  PENDING
-  CONNECTED // Mutual Connect 
-  SKIPPED
-}
-enum PreferenceLevel {
-  NO
-  SOMETIMES
-  YES
-}
 model Chat {
   id        String   @id @default(uuid())
   user1Id   String
@@ -149,4 +124,58 @@ model Message {
   createdAt DateTime @default(now())
   
   @@index([chatId, createdAt])
+}
+model KYCDocument {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id])
+  
+  // Simple fields
+  idType          String   // aadhaar, pan, passport
+  idFrontUrl      String
+  idBackUrl       String?
+  selfieUrl       String
+  
+  // Status
+  status          VerificationStatus @default(PENDING)
+  step            Int @default(0)
+  rejectionReason String?
+  
+  // Timestamps
+  submittedAt     DateTime @default(now())
+  reviewedAt      DateTime?
+  reviewerId      String?
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([status])
+}// --- Enums ---
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum PremiumStatus {
+  FREE
+  PREMIUM
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  FLAGGED
+}
+
+enum MatchStatus {
+  PENDING
+  CONNECTED // Mutual Connect 
+  SKIPPED
+}
+enum PreferenceLevel {
+  NO
+  SOMETIMES
+  YES
 }

@@ -24,22 +24,48 @@ const storage = multerS3({
     const userId = req.user ? req.user.userId : "anonymous";
 
     // 2. CREATE DYNAMIC PATH
-    // Path: uploads/users/101/photo-1709...jpg
-    const fileName = `users/${userId}/${
-      file.fieldname
-    }-${Date.now()}${path.extname(file.originalname)}`;
+    // Path: users/101/photo-1709...jpg
+    let fileName;
+    if (file.fieldname === "photo")
+      fileName = `users/${userId}/${file.fieldname}-${Date.now()}${path.extname(
+        file.originalname
+      )}`;
+    else fileName = `users/${userId}/${file.fieldname}`;
 
     cb(null, fileName);
   },
 });
 
-const upload = multer({
+export const upload = multer({
   storage: storage,
   limits: { fileSize: 10000000 },
   fileFilter: function (req, file, cb) {
     checkFileType(file, cb);
   },
 }).single("photo");
+export const uploadIDFront = multer({
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: function (req, file, cb) {
+    checkFileType(file, cb);
+  },
+}).single("idFront");
+
+export const uploadIDBack = multer({
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: function (req, file, cb) {
+    checkFileType(file, cb);
+  },
+}).single("idBack");
+
+export const uploadSelfie = multer({
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: function (req, file, cb) {
+    checkFileType(file, cb);
+  },
+}).single("selfie");
 
 function checkFileType(file, cb) {
   const filetypes = /jpeg|jpg|png|gif/;
@@ -52,5 +78,3 @@ function checkFileType(file, cb) {
     cb(new Error("Error: Images Only!"));
   }
 }
-
-export default upload;

@@ -4,9 +4,11 @@ import authRouter from "./src/routes/authRouter.js";
 import profileRouter from "./src/routes/profileRouter.js";
 import matchesRouter from "./src/routes/matchesRoutes.js";
 import chatRouter from "./src/routes/chatRouter.js";
+import userRouter from "./src/routes/userRouter.js";
 import morgan from "morgan";
 import http from "http";
 import { initializeSocket } from "./src/socket.js";
+import kycRouter from "./src/routes/kycRoutes.js";
 const app = express();
 
 // Create HTTP server
@@ -31,6 +33,8 @@ app.use("/auth", authRouter);
 app.use("/profile", profileRouter);
 app.use("/matches", matchesRouter);
 app.use("/chat", chatRouter);
+app.use("/user", userRouter);
+app.use("/kyc", kycRouter);
 // Start the server
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, "0.0.0.0", () => {

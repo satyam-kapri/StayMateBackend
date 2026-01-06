@@ -6,9 +6,9 @@ import {
   uploadPhoto,
   deletePhoto,
   updateBio,
-  getMyProfile
+  getMyProfile,
 } from "../controllers/profileController.js";
-import upload from "../middleware/multerUpload.js";
+import { upload } from "../middleware/multerUpload.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 
 const profileRouter = Router();

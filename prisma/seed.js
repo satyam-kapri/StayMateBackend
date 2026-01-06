@@ -1,224 +1,240 @@
-import {
-  PrismaClient,
-  Gender,
-  PreferenceLevel,
-  PremiumStatus,
-} from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { faker } from "@faker-js/faker";
+import { createHash } from "crypto";
+
+// Configure faker for Indian data
+faker.locale = "en_IND";
 
 const prisma = new PrismaClient();
 
-// ------------------------------------------------------------------
-// 1. CURATED IMAGE POOLS (High Quality Portraits)
-// ------------------------------------------------------------------
-
-// Specific Unsplash Image IDs to ensure high quality & realistic faces
-const MALE_IMAGE_IDS = [
-  "Mt7l7kHe33k", "iFgRcqHznqg", "7YVZYZeITc8", "WNoLnJo7tS8",
-  "dANjuKw5XFk", "IF9TK5Uy-KI", "ilW1iB9uXUQ", "poZIJp2178s",
-  "5aGUyCW_PJw", "6Nub980bI3I", "mEZ3PoFGs_k", "ZHvM3XIOHoE",
-  "DItYlc26zVI", "rDEOVtE7vOs", "cdksyTqBeU0", "O3ymvT7Wf9U",
-  "jmURdhtm7k4", "Yn57cJC4D5E", "aQcE3gDSzbw", "8PMvB42mCUc",
-  "C8Ta0gwPbQg", "AG712I-jEFE", "NTPyJPj5mIQ", "t6BUn_WbE94"
+// Real HD image URLs from Unsplash (free to use)
+const maleProfilePhotos = [
+  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=800&fit=crop",
+  "https://images.unsplash.com/photo-1507591064344-4c6ce005b128?w=800&h=800&fit=crop",
+  "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=800&h=800&fit=crop",
+  "https://images.unsplash.com/photo-1506919258185-6078bba55d2a?w=800&h=800&fit=crop",
+  "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=800&h=800&fit=crop",
+  "https://images.unsplash.com/photo-1504257432389-52343af06ae3?w=800&h=800&fit=crop",
 ];
 
-const FEMALE_IMAGE_IDS = [
-  "9UVmlIb0wJU", "jzz_33GNpnM", "AB6502DBHj8", "rDEOVtE7vOs",
-  "bRC7rWnO3xY", "FVh_yqLR9eA", "0fN7Fxv1eWA", "QXevDflbl8A",
-  "u3WmDy54tpY", "X6Uj51n5CE8", "Zz5LQe-VSMY", "Tjbk79XB82M",
-  "cnCVj-2F6nU", "c_GmwfHBDzk", "DLKR_x3T_7s", "AZ60iF1Zc_I",
-  "pAtA8xe_iVM", "vSuQ1_24hFA", "dZ4Yj8h0Qf0", "W7b3eDUb_2I",
-  "6Whd7pqw3DA", "n4KewLKFOZw", "rriAI0nhcbc", "XQWxrCLwvQA"
+const femaleProfilePhotos = [
+  "https://media.istockphoto.com/id/1471725712/photo/smiling-young-woman-taking-selfies-while-relaxing-at-home.jpg?s=612x612&w=0&k=20&c=m-3kAzSQ1hpCfEEO-UtfafjOO0X0IrAlASKP0GFWLMU=",
+  "https://images.unsplash.com/photo-1534751516642-a1af1ef26a56?w=800&h=800&fit=crop",
+  "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800&h=800&fit=crop",
+  "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=800&h=800&fit=crop",
+  "https://images.unsplash.com/photo-1542206395-9feb3edaa68d?w=800&h=800&fit=crop",
+  "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=800&h=800&fit=crop",
 ];
 
-// Helper to construct URL
-const makeUrl = (id: string) => 
-  `https://images.unsplash.com/photo-${id}?w=600&h=600&fit=crop&crop=faces&q=80`;
+const otherProfilePhotos = [
+  "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&h=800&fit=crop",
+  "https://images.unsplash.com/photo-1525134479668-1bee5c7c6845?w=800&h=800&fit=crop",
+  "https://images.unsplash.com/photo-1542740348-39501cd6e2b4?w=800&h=800&fit=crop",
+  "https://images.unsplash.com/photo-1557296387-5358ad7997bb?w=800&h=800&fit=crop",
+];
 
-// Fisher-Yates Shuffle to randomize the pool order
-const shuffleArray = <T>(array: T[]): T[] => {
-  const newArr = [...array];
-  for (let i = newArr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [newArr[i], newArr[j]] = [newArr[j], newArr[i]];
+const idDocumentPhotos = {
+  aadhaar:
+    "https://img.freepik.com/premium-photo/midsection-man-holding-id-cards_1048944-2784854.jpg?semt=ais_hybrid&w=740&q=80",
+  pan: "https://www.pancardapp.com/blog/wp-content/uploads/2019/04/sample-pan-card.jpg",
+  passport:
+    "https://upload.wikimedia.org/wikipedia/commons/7/7c/Indian_Passport.jpg",
+};
+
+const selfiePhotos = [
+  "https://img.freepik.com/free-photo/happy-optimistic-woman-with-two-hair-buns-dressed-jacket-enjoys-free-time-walking-city-holds-bottle-detox-drink_273609-55634.jpg?semt=ais_hybrid&w=740&q=80",
+  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRrAd1uUrIP0nWpp8-dH1i0LsF1fMTyk5rQ1w&s",
+  "https://t3.ftcdn.net/jpg/05/01/01/84/360_F_501018486_SQE0vK8bwMaFAbsHbp5JV2r1rnE1hT9z.jpg",
+  "https://media.istockphoto.com/id/1460836430/photo/video-ringing-successful-businessman-looking-at-smartphone-camera-talking-remotely-with.jpg?s=612x612&w=0&k=20&c=-DkYIW3peErREuT-TbO0XgzLSWdvwNKW0DSES5H3TkY=",
+];
+
+const preferredAreas = ["Delhi", "Gurgaon", "Noida", "Ghaziabad", "Faridabad"];
+const occupations = [
+  "Software Engineer",
+  "Doctor",
+  "Teacher",
+  "Designer",
+  "Student",
+  "Business Owner",
+  "Marketing Manager",
+  "Architect",
+  "Lawyer",
+  "CA",
+];
+
+function generateIndianPhoneNumber() {
+  // Generate random Indian phone number starting with +91
+  const prefixes = ["98", "97", "96", "99", "90", "91", "92", "93", "94", "95"];
+  const prefix = faker.helpers.arrayElement(prefixes);
+  const suffix = faker.string.numeric(8);
+  return `+91${prefix}${suffix}`;
+}
+
+function generateIndianName(gender) {
+  if (gender === "MALE") {
+    return faker.person.fullName({ sex: "male" });
+  } else if (gender === "FEMALE") {
+    return faker.person.fullName({ sex: "female" });
+  } else {
+    return faker.person.fullName();
   }
-  return newArr;
-};
+}
 
-// ------------------------------------------------------------------
-// 2. DATA CONSTANTS
-// ------------------------------------------------------------------
+function generateFirebaseUid(email) {
+  // Simulate Firebase UID by hashing email
+  return createHash("sha256").update(email).digest("hex");
+}
 
-const indianCities = [
-  { name: "Delhi", minRent: 8000, maxRent: 30000 },
-  { name: "Gurugram", minRent: 10000, maxRent: 35000 },
-  { name: "Noida", minRent: 7000, maxRent: 25000 },
-  { name: "Greater Noida", minRent: 6000, maxRent: 18000 },
-  { name: "Bangalore", minRent: 12000, maxRent: 40000 },
-  { name: "Mumbai", minRent: 15000, maxRent: 50000 },
-  { name: "Hyderabad", minRent: 9000, maxRent: 28000 },
-  { name: "Pune", minRent: 8000, maxRent: 30000 },
-];
+function getRandomPhotos(gender) {
+  const photoSet =
+    gender === "MALE"
+      ? maleProfilePhotos
+      : gender === "FEMALE"
+      ? femaleProfilePhotos
+      : otherProfilePhotos;
 
-const indianOccupations = [
-  "Software Engineer", "Data Analyst", "Marketing Manager", "Product Manager",
-  "Doctor", "CA", "Teacher", "Graphic Designer", "Content Writer",
-  "Sales Executive", "Business Analyst", "Architect", "Lawyer",
-  "Financial Advisor", "HR Manager", "UX Designer", "Civil Engineer"
-];
+  // Shuffle and take 3-5 photos
+  const shuffled = [...photoSet].sort(() => 0.5 - Math.random());
+  const count = faker.number.int({ min: 3, max: 5 });
+  return shuffled.slice(0, count);
+}
 
-const getIndianName = (gender: Gender) => {
-  const maleFirstNames = [
-    "Rahul", "Raj", "Amit", "Vikram", "Suresh", "Rohan", "Arjun", "Karan",
-    "Aditya", "Sanjay", "Deepak", "Manoj", "Nikhil", "Prateek", "Vishal",
-    "Kabir", "Aryan", "Dhruv", "Ishaan", "Vihaan"
-  ];
-
-  const femaleFirstNames = [
-    "Priya", "Anjali", "Neha", "Ritu", "Sonia", "Divya", "Pooja", "Meera",
-    "Kavita", "Shreya", "Aditi", "Swati", "Nisha", "Tanvi", "Isha",
-    "Anya", "Diya", "Ananya", "Zara", "Sana"
-  ];
-
-  const lastNames = [
-    "Sharma", "Verma", "Patel", "Singh", "Kumar", "Gupta", "Joshi", "Reddy",
-    "Das", "Nair", "Menon", "Choudhary", "Malhotra", "Saxena", "Kapoor",
-    "Bhatia", "Mehta", "Jain", "Aggarwal", "Iyer"
-  ];
-
-  const firstNames = gender === Gender.MALE ? maleFirstNames : femaleFirstNames;
-
-  return {
-    firstName: faker.helpers.arrayElement(firstNames),
-    lastName: faker.helpers.arrayElement(lastNames),
-  };
-};
-
-// ------------------------------------------------------------------
-// 3. MAIN SCRIPT
-// ------------------------------------------------------------------
+function getRandomKYCIdType() {
+  return faker.helpers.arrayElement(["aadhaar", "pan", "passport"]);
+}
 
 async function main() {
-  console.log("🧹 Cleaning database...");
-  await prisma.$transaction([
-    prisma.photo.deleteMany(),
-    prisma.profile.deleteMany(),
-    prisma.match.deleteMany(),
-    prisma.user.deleteMany(),
-  ]);
+  console.log("🌱 Starting seed script...");
 
-  console.log("🌱 Preparing image pools...");
-  // Shuffle pools once at the start so we can "pop" unique images
-  const availableMaleImages = shuffleArray(MALE_IMAGE_IDS);
-  const availableFemaleImages = shuffleArray(FEMALE_IMAGE_IDS);
-  
-  // Create a pool for "Other" gender mixing both
-  const availableOtherImages = shuffleArray([...MALE_IMAGE_IDS, ...FEMALE_IMAGE_IDS]);
+  // Clear existing data
+  await prisma.kYCDocument.deleteMany();
+  await prisma.photo.deleteMany();
+  await prisma.profile.deleteMany();
+  await prisma.user.deleteMany();
 
-  console.log("🚀 Seeding 20 users...");
-  const genders = Object.values(Gender);
+  const users = [];
+  const profiles = [];
+  const photos = [];
+  const kycDocuments = [];
 
+  // Create 20 users
   for (let i = 0; i < 20; i++) {
-    const gender = genders[Math.floor(Math.random() * genders.length)];
-    const { firstName, lastName } = getIndianName(gender);
-    const fullName = `${firstName} ${lastName}`;
+    const gender = faker.helpers.arrayElement(["MALE", "FEMALE", "OTHER"]);
+    const phone = generateIndianPhoneNumber();
+    const email = faker.internet.email().toLowerCase();
+    const firebaseUid = generateFirebaseUid(email);
+    const name = generateIndianName(gender);
+    const age = faker.number.int({ min: 21, max: 35 });
 
-    // --- NON-REPEATING IMAGE LOGIC ---
-    // We try to take an image from the pool. If pool is empty, we fallback to random
-    let selectedImageIds: string[] = [];
-    const numPhotos = faker.number.int({ min: 2, max: 4 });
-
-    for (let p = 0; p < numPhotos; p++) {
-      let imgId;
-      if (gender === Gender.MALE && availableMaleImages.length > 0) {
-        imgId = availableMaleImages.pop();
-      } else if (gender === Gender.FEMALE && availableFemaleImages.length > 0) {
-        imgId = availableFemaleImages.pop();
-      } else if (gender === Gender.OTHER && availableOtherImages.length > 0) {
-        imgId = availableOtherImages.pop();
-      } else {
-        // Fallback if we run out of unique predefined images
-        imgId = faker.helpers.arrayElement(
-          gender === Gender.MALE ? MALE_IMAGE_IDS : FEMALE_IMAGE_IDS
-        );
-      }
-      if (imgId) selectedImageIds.push(imgId);
-    }
-    // ---------------------------------
-
-    const indianPhone = `+91${faker.string.numeric({ length: 10, allowLeadingZeros: false })}`;
-    const city = faker.helpers.arrayElement(indianCities);
-    const preferredAreas = faker.helpers.arrayElements(indianCities.map((c) => c.name), { min: 1, max: 3 });
-
-    // Budget Logic
-    const areaStats = indianCities.filter((c) => preferredAreas.includes(c.name));
-    const budgetMin = Math.min(...areaStats.map((a) => a.minRent));
-    const budgetMax = Math.max(...areaStats.map((a) => a.maxRent)) * 1.2;
-
-    await prisma.user.create({
+    // Create User
+    const user = await prisma.user.create({
       data: {
-        phone: indianPhone,
-        firebaseUid: faker.string.uuid(),
-        isVerified: faker.datatype.boolean(0.8),
-        premiumStatus: faker.helpers.arrayElement([
-          PremiumStatus.FREE,
-          PremiumStatus.PREMIUM,
-          PremiumStatus.ULTRA_PREMIUM,
-        ]),
-        createdAt: faker.date.recent({ days: 30 }),
-
-        profile: {
-          create: {
-            name: fullName,
-            age: faker.number.int({ min: 21, max: 32 }),
-            gender,
-            occupation: faker.helpers.arrayElement(indianOccupations),
-            bio: faker.lorem.sentences({ min: 1, max: 2 }),
-            budgetMin: Math.round(budgetMin / 1000) * 1000,
-            budgetMax: Math.round(budgetMax / 1000) * 1000,
-            preferredAreas,
-            moveInDate: faker.date.between({
-              from: new Date(),
-              to: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
-            }),
-            
-            // Preferences
-            sleepHabit: faker.helpers.arrayElement(Object.values(PreferenceLevel)),
-            cleanliness: faker.helpers.weightedArrayElement([
-                { weight: 70, value: PreferenceLevel.YES }, 
-                { weight: 30, value: PreferenceLevel.SOMETIMES }
-            ]),
-            smoking: faker.helpers.weightedArrayElement([
-                { weight: 80, value: PreferenceLevel.NO }, 
-                { weight: 20, value: PreferenceLevel.YES }
-            ]),
-            drinking: faker.helpers.arrayElement(Object.values(PreferenceLevel)),
-            pets: faker.helpers.arrayElement(Object.values(PreferenceLevel)),
-            socialVibe: faker.helpers.arrayElement(Object.values(PreferenceLevel)),
-            
-            currentStep: 5,
-
-            // Create Photos
-            photos: {
-              create: selectedImageIds.map((id, index) => ({
-                url: makeUrl(id),
-                order: index,
-              })),
-            },
-          },
-        },
+        phone,
+        firebaseUid,
+        isVerified: faker.datatype.boolean(0.7), // 70% verified
+        premiumStatus: faker.helpers.arrayElement(["FREE", "PREMIUM"]),
+        status: faker.helpers.arrayElement(["PENDING", "VERIFIED", "FLAGGED"]),
+        createdAt: faker.date.past({ years: 1 }),
+        updatedAt: faker.date.recent(),
       },
     });
 
-    if ((i + 1) % 5 === 0) console.log(`   Created ${i + 1} users...`);
+    users.push(user);
+
+    // Create Profile
+    const profile = await prisma.profile.create({
+      data: {
+        userId: user.id,
+        name,
+        age,
+        gender,
+        occupation: faker.helpers.arrayElement(occupations),
+        bio: faker.lorem.sentences(2),
+        budgetMin: faker.number.float({
+          min: 8000,
+          max: 20000,
+          precision: 1000,
+        }),
+        budgetMax: faker.number.float({
+          min: 15000,
+          max: 40000,
+          precision: 1000,
+        }),
+        preferredAreas: faker.helpers.arrayElements(preferredAreas, {
+          min: 1,
+          max: 3,
+        }),
+        moveInDate: faker.date.future({ years: 0.5 }),
+        sleepHabit: faker.helpers.arrayElement(["NO", "SOMETIMES", "YES"]),
+        cleanliness: faker.helpers.arrayElement(["NO", "SOMETIMES", "YES"]),
+        smoking: faker.helpers.arrayElement(["NO", "SOMETIMES", "YES"]),
+        drinking: faker.helpers.arrayElement(["NO", "SOMETIMES", "YES"]),
+        pets: faker.helpers.arrayElement(["NO", "SOMETIMES", "YES"]),
+        socialVibe: faker.helpers.arrayElement(["NO", "SOMETIMES", "YES"]),
+        currentStep: faker.number.int({ min: 0, max: 5 }),
+        lastSeen: faker.date.recent(),
+      },
+    });
+
+    profiles.push(profile);
+
+    // Create Photos for Profile
+    const profilePhotos = getRandomPhotos(gender);
+    for (let j = 0; j < profilePhotos.length; j++) {
+      const photo = await prisma.photo.create({
+        data: {
+          profileId: profile.id,
+          url: profilePhotos[j],
+          order: j,
+        },
+      });
+      photos.push(photo);
+    }
+
+    // Create KYC Document for 80% of users
+    if (faker.datatype.boolean(0.8)) {
+      const idType = getRandomKYCIdType();
+      const kyc = await prisma.kYCDocument.create({
+        data: {
+          userId: user.id,
+          idType,
+          idFrontUrl: idDocumentPhotos[idType],
+          idBackUrl: faker.datatype.boolean(0.5)
+            ? idDocumentPhotos[idType]
+            : null,
+          selfieUrl: faker.helpers.arrayElement(selfiePhotos),
+          status: faker.helpers.arrayElement([
+            "PENDING",
+            "VERIFIED",
+            "FLAGGED",
+          ]),
+          step: faker.number.int({ min: 0, max: 3 }),
+          rejectionReason: faker.datatype.boolean(0.2)
+            ? faker.lorem.sentence()
+            : null,
+          submittedAt: faker.date.past({ years: 0.5 }),
+          reviewedAt: faker.datatype.boolean(0.4) ? faker.date.recent() : null,
+          reviewerId: faker.datatype.boolean(0.3) ? faker.string.uuid() : null,
+        },
+      });
+
+      kycDocuments.push(kyc);
+    }
+
+    console.log(`✅ Created user ${i + 1}: ${name} (${phone})`);
   }
 
-  console.log("✅ Seeding complete!");
+  console.log("\n📊 Seed Summary:");
+  console.log(`👥 Users: ${users.length}`);
+  console.log(`📝 Profiles: ${profiles.length}`);
+  console.log(`📸 Photos: ${photos.length}`);
+  console.log(`🆔 KYC Documents: ${kycDocuments.length}`);
+  console.log("\n✨ Seed completed successfully!");
 }
 
 main()
   .catch((e) => {
-    console.error(e);
+    console.error("❌ Error during seeding:", e);
     process.exit(1);
   })
   .finally(async () => {
