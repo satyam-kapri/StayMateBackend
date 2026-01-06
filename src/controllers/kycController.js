@@ -46,6 +46,8 @@ export const startKYC = async (req, res) => {
         idType: idType,
         status: "PENDING",
         step: 1,
+        idFrontUrl: "",
+        selfieUrl: "",
       },
     });
 
