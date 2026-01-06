@@ -23,11 +23,19 @@ export const startKYC = async (req, res) => {
     });
 
     if (existingKYC) {
-      return res.status(400).json({
-        success: false,
-        message: "You already have a pending KYC submission",
-        data: existingKYC,
+      const kyc = await prisma.kYCDocument.update({
+        data: {
+          idType: idType,
+          status: "PENDING",
+          step: 1,
+        },
       });
+      res.status(201).json({
+        success: true,
+        message: "KYC process restarted",
+        kyc: kyc,
+      });
+      return;
     }
 
     // Create new KYC document
