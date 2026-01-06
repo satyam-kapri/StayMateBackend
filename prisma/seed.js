@@ -48,7 +48,7 @@ const selfiePhotos = [
   "https://media.istockphoto.com/id/1460836430/photo/video-ringing-successful-businessman-looking-at-smartphone-camera-talking-remotely-with.jpg?s=612x612&w=0&k=20&c=-DkYIW3peErREuT-TbO0XgzLSWdvwNKW0DSES5H3TkY=",
 ];
 
-const preferredAreas = ["Delhi", "Gurgaon", "Noida", "Greater Noida"];
+const preferredAreas = ["Delhi", "Gurgaon", "Noida", "Greater_Noida"];
 const occupations = [
   "Software Engineer",
   "Doctor",
