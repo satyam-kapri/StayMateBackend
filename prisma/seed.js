@@ -34,10 +34,10 @@ const otherProfilePhotos = [
 ];
 
 const idDocumentPhotos = {
-  aadhaar:
+  AADHAAR:
     "https://img.freepik.com/premium-photo/midsection-man-holding-id-cards_1048944-2784854.jpg?semt=ais_hybrid&w=740&q=80",
-  pan: "https://www.pancardapp.com/blog/wp-content/uploads/2019/04/sample-pan-card.jpg",
-  passport:
+  PAN: "https://www.pancardapp.com/blog/wp-content/uploads/2019/04/sample-pan-card.jpg",
+  DRIVING_LICENSE:
     "https://upload.wikimedia.org/wikipedia/commons/7/7c/Indian_Passport.jpg",
 };
 
@@ -199,9 +199,7 @@ async function main() {
           userId: user.id,
           idType,
           idFrontUrl: idDocumentPhotos[idType],
-          idBackUrl: faker.datatype.boolean(0.5)
-            ? idDocumentPhotos[idType]
-            : null,
+          idBackUrl: idDocumentPhotos[idType],
           selfieUrl: faker.helpers.arrayElement(selfiePhotos),
           status: faker.helpers.arrayElement([
             "PENDING",
