@@ -234,7 +234,7 @@ export const getMyProfile = async (req, res) => {
 
 export const getUserProfile = async (req, res) => {
   try {
-    const { userId } = req.body;
+    const { userId } = req.params;
     if (!userId) {
       res.status(400).json({
         message: "userId not found!!",
