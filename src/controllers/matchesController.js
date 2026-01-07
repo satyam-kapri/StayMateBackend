@@ -150,7 +150,7 @@ export const respondToMatch = async (req, res) => {
       const adminMessage = await prisma.message.create({
         data: {
           chatId: chat.id,
-          senderId: "c1f6d9e0-f792-4e1d-81b0-d962a44b840f", // Or use a system user ID
+          senderId: "adminid123", // Or use a system user ID
           content:
             "🎉 You are now connected! Say hello and start your conversation.",
           read: false,
