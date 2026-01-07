@@ -224,24 +224,46 @@ export const getConnectedMatches = async (req, res) => {
   try {
     const userId = req.user.userId;
 
-    const matches = await prisma.match.findMany({
+    // 1. Fetch all connected matches where the user is involved
+    const allMatches = await prisma.match.findMany({
       where: {
         status: "CONNECTED",
         OR: [{ requesterId: userId }, { receiverId: userId }],
       },
       include: {
         requester: {
-          include: { profile: { include: { photos: true } } },
+          select: {
+            id: true,
+            isVerified: true,
+            profile: { select: { name: true, gender: true, photos: true } },
+          },
         },
         receiver: {
-          include: { profile: { include: { photos: true } } },
+          include: {
+            id: true,
+            isVerified: true,
+            profile: { select: { name: true, gender: true, photos: true } },
+          },
         },
       },
       orderBy: { updatedAt: "desc" },
     });
 
-    res.json({ success: true, matches });
+    // 2. Separate them based on the user's role
+    const requested = allMatches.filter(
+      (match) => match.requesterId === userId
+    );
+    const received = allMatches.filter((match) => match.receiverId === userId);
+
+    res.json({
+      success: true,
+      matches: {
+        requested, // Matches the user initiated
+        received, // Matches the user accepted
+      },
+    });
   } catch (err) {
+    console.error("Error fetching connected matches:", err);
     res.status(500).json({ message: "Fetch connected matches failed" });
   }
 };
