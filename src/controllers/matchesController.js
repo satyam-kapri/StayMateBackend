@@ -239,7 +239,7 @@ export const getConnectedMatches = async (req, res) => {
           },
         },
         receiver: {
-          include: {
+          select: {
             id: true,
             isVerified: true,
             profile: { select: { name: true, gender: true, photos: true } },
