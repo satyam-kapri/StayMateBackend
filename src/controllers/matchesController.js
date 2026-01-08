@@ -112,8 +112,17 @@ export const respondToMatch = async (req, res) => {
   try {
     const { targetUserId, action, compatibilityScore } = req.body;
     const userId = req.user.userId;
-    const status = action === "CONNECT" ? "CONNECTED" : "SKIPPED";
 
+    const status = action === "CONNECT" ? "CONNECTED" : "SKIPPED";
+    const user = await prisma.user.findFirst({
+      where: { id: userId },
+    });
+    if (action === "CONNECT" && user.status !== "VERIFIED") {
+      res
+        .status(400)
+        .json({ success: false, message: "Complete Verification First!" });
+      return;
+    }
     await prisma.match.create({
       data: {
         requesterId: userId,
