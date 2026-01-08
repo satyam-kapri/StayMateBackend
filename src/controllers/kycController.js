@@ -521,12 +521,12 @@ export const rejectKYC = async (req, res) => {
       });
     }
 
-    if (kyc.status !== "PENDING") {
-      return res.status(400).json({
-        success: false,
-        message: "KYC is not pending",
-      });
-    }
+    // if (kyc.status !== "PENDING") {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: "KYC is not pending",
+    //   });
+    // }
 
     const updatedKYC = await prisma.kYCDocument.update({
       where: { id: id },

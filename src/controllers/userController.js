@@ -201,7 +201,12 @@ export const updateUserStatus = async (req, res) => {
       where: { id: id },
       data: updatedData,
     });
-
+    if (status) {
+      await prisma.kYCDocument.update({
+        where: { userId: id },
+        data: { status },
+      });
+    }
     res.json({
       success: true,
       message: "User updated successfully",
