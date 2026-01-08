@@ -45,7 +45,7 @@ export const upload = multer({
 }).single("photo");
 export const uploadIDFront = multer({
   storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
   fileFilter: function (req, file, cb) {
     checkFileType(file, cb);
   },
@@ -53,7 +53,7 @@ export const uploadIDFront = multer({
 
 export const uploadIDBack = multer({
   storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
   fileFilter: function (req, file, cb) {
     checkFileType(file, cb);
   },
@@ -61,7 +61,7 @@ export const uploadIDBack = multer({
 
 export const uploadSelfie = multer({
   storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
   fileFilter: function (req, file, cb) {
     checkFileType(file, cb);
   },
