@@ -9,7 +9,7 @@ import {
   getMyProfile,
   getUserProfile,
 } from "../controllers/profileController.js";
-import { upload } from "../middleware/multerUpload.js";
+import { handleUpload, upload } from "../middleware/multerUpload.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 
 const profileRouter = Router();
@@ -21,7 +21,7 @@ profileRouter.patch("/budget-location", authMiddleware, updateBudgetLocation);
 profileRouter.patch("/lifestyle", authMiddleware, updateLifestyle);
 profileRouter.patch("/bio", authMiddleware, updateBio);
 
-profileRouter.post("/photo", authMiddleware, upload, uploadPhoto);
+profileRouter.post("/photo", authMiddleware, handleUpload(upload), uploadPhoto);
 profileRouter.delete("/photo/:photoId", authMiddleware, deletePhoto);
 
 export default profileRouter;

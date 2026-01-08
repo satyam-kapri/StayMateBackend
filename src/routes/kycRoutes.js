@@ -2,6 +2,7 @@ import { Router } from "express";
 import authMiddleware from "../middleware/authMiddleware.js";
 import * as kycController from "../controllers/kycController.js";
 import {
+  handleUpload,
   uploadIDBack,
   uploadIDFront,
   uploadSelfie,
@@ -17,7 +18,7 @@ kycRouter.post("/start", authMiddleware, kycController.startKYC);
 kycRouter.post(
   "/upload/front",
   authMiddleware,
-  uploadIDFront,
+  handleUpload(uploadIDFront),
   kycController.uploadIDFront
 );
 
@@ -25,7 +26,7 @@ kycRouter.post(
 kycRouter.post(
   "/upload/back",
   authMiddleware,
-  uploadIDBack,
+  handleUpload(uploadIDBack),
   kycController.uploadIDBack
 );
 
@@ -33,7 +34,7 @@ kycRouter.post(
 kycRouter.post(
   "/upload/selfie",
   authMiddleware,
-  uploadSelfie,
+  handleUpload(uploadSelfie),
   kycController.uploadSelfie
 );
 

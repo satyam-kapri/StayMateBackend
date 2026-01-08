@@ -38,43 +38,66 @@ const storage = multerS3({
 
 export const upload = multer({
   storage: storage,
-  limits: { fileSize: 10000000 },
-  fileFilter: function (req, file, cb) {
-    checkFileType(file, cb);
-  },
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: fileFilter,
 }).single("photo");
 export const uploadIDFront = multer({
   storage: storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
-  fileFilter: function (req, file, cb) {
-    checkFileType(file, cb);
-  },
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: fileFilter,
 }).single("idFront");
 
 export const uploadIDBack = multer({
   storage: storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
-  fileFilter: function (req, file, cb) {
-    checkFileType(file, cb);
-  },
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: fileFilter,
 }).single("idBack");
 
 export const uploadSelfie = multer({
   storage: storage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
-  fileFilter: function (req, file, cb) {
-    checkFileType(file, cb);
-  },
+  fileFilter: fileFilter,
 }).single("selfie");
 
-function checkFileType(file, cb) {
-  const filetypes = /jpeg|jpg|png|gif/;
-  const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-  const mimetype = filetypes.test(file.mimetype);
+const fileFilter = (req, file, cb) => {
+  const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
 
-  if (mimetype && extname) {
-    return cb(null, true);
+  if (allowedTypes.includes(file.mimetype)) {
+    cb(null, true);
   } else {
-    cb(new Error("Error: Images Only!"));
+    // Pass a specific error message we can catch later
+    cb(new Error("INVALID_FILE_TYPE"));
   }
-}
+};
+export const handleUpload = (middleware) => {
+  return (req, res, next) => {
+    middleware(req, res, (err) => {
+      // Case A: File too large (Multer standard error)
+      if (err instanceof multer.MulterError && err.code === "LIMIT_FILE_SIZE") {
+        return res.status(400).json({
+          success: false,
+          message: "File is too large. Max limit is 5MB.",
+        });
+      }
+
+      // Case B: Invalid File Type (Our custom error)
+      if (err && err.message === "INVALID_FILE_TYPE") {
+        return res.status(400).json({
+          success: false,
+          message: "Only JPG, JPEG, and PNG files are allowed.",
+        });
+      }
+
+      // Case C: Other Errors (AWS errors, etc)
+      if (err) {
+        return res.status(500).json({
+          success: false,
+          message: "Upload failed: " + err.message,
+        });
+      }
+
+      // Success
+      next();
+    });
+  };
+};
