@@ -28,14 +28,23 @@ const storage = multerS3({
     let fileName;
     if (file.fieldname === "photo")
       fileName = `users/${userId}/${file.fieldname}-${Date.now()}${path.extname(
-        file.originalname
+        file.originalname,
       )}`;
     else fileName = `users/${userId}/${file.fieldname}`;
 
     cb(null, fileName);
   },
 });
+const fileFilter = (req, file, cb) => {
+  const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
 
+  if (allowedTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    // Pass a specific error message we can catch later
+    cb(new Error("INVALID_FILE_TYPE"));
+  }
+};
 export const upload = multer({
   storage: storage,
   limits: { fileSize: 10 * 1024 * 1024 },
@@ -59,16 +68,6 @@ export const uploadSelfie = multer({
   fileFilter: fileFilter,
 }).single("selfie");
 
-const fileFilter = (req, file, cb) => {
-  const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
-
-  if (allowedTypes.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    // Pass a specific error message we can catch later
-    cb(new Error("INVALID_FILE_TYPE"));
-  }
-};
 export const handleUpload = (middleware) => {
   return (req, res, next) => {
     middleware(req, res, (err) => {
