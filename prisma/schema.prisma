@@ -56,21 +56,79 @@ model Profile {
   preferredAreas    Areas[]       
   moveInDate        DateTime?
   
-  // Lifestyle Survey 
-  sleepHabit       PreferenceLevel @default(SOMETIMES)
-  cleanliness      PreferenceLevel @default(SOMETIMES)
-  smoking          PreferenceLevel @default(SOMETIMES)
-  drinking         PreferenceLevel @default(SOMETIMES)
-  pets             PreferenceLevel @default(SOMETIMES)
-  socialVibe       PreferenceLevel @default(SOMETIMES)
-  
   // Media 
   photos            Photo[]
   
+  questionResponses QuestionResponse[]
+
   currentStep       Int            @default(0)        
   lastSeen          DateTime?
 }
+model QuestionCategory {
+  id          String    @id @default(uuid())
+  name        String    // Only "Lifestyle Survey" now
+  description String?
+  order       Int
+  questions   Question[]
+  
+  @@unique([name])
+}
 
+model Question {
+  id          String    @id @default(uuid())
+  categoryId  String
+  category    QuestionCategory @relation(fields: [categoryId], references: [id])
+  
+  text        String
+  type        QuestionType
+  options     Option[]
+  order       Int
+  isActive    Boolean   @default(true)
+  required    Boolean   @default(false)
+  weight      Float     @default(1.0)  // Weight for matching
+  
+  questionResponses QuestionResponse[]
+  
+  @@unique([categoryId, order])
+}
+
+model Option {
+  id         String   @id @default(uuid())
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id])
+  
+  text       String
+  value      String
+  order      Int
+  
+  @@unique([questionId, order])
+}
+
+model QuestionResponse {
+  id         String   @id @default(uuid())
+  profileId  String
+  questionId String
+  profile    Profile  @relation(fields: [profileId], references: [id])
+  question   Question @relation(fields: [questionId], references: [id])
+  
+  textValue    String?
+  numberValue  Float?
+  dateValue    DateTime?
+  selectedOptions String[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([profileId, questionId])
+}
+
+enum QuestionType {
+  RADIO
+  MULTI_SELECT
+  TEXT
+  NUMBER
+  DATE
+}
 model Photo {
   id        String   @id @default(uuid())
   profileId String

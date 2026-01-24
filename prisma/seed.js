@@ -62,6 +62,94 @@ const occupations = [
   "CA",
 ];
 
+// Updated: Only Lifestyle Survey questions
+const questionCategories = [
+  {
+    name: "Lifestyle Survey",
+    description: "Questions about habits, preferences, and lifestyle",
+    order: 0,
+    questions: [
+      {
+        text: "What is your sleep habit?",
+        type: "RADIO",
+        order: 0,
+        required: true,
+        weight: 1.5,
+        options: [
+          { text: "Early bird", value: "EARLY_BIRD" },
+          { text: "Night owl", value: "NIGHT_OWL" },
+          { text: "Flexible", value: "FLEXIBLE" },
+          { text: "Light sleeper", value: "LIGHT_SLEEPER" },
+        ],
+      },
+      {
+        text: "How clean do you keep your space?",
+        type: "RADIO",
+        order: 1,
+        required: true,
+        weight: 2.0,
+        options: [
+          { text: "Very clean", value: "VERY_CLEAN" },
+          { text: "Moderately clean", value: "MODERATE" },
+          { text: "Relaxed about cleanliness", value: "RELAXED" },
+        ],
+      },
+      {
+        text: "What is your smoking preference?",
+        type: "RADIO",
+        order: 2,
+        required: true,
+        weight: 2.5,
+        options: [
+          { text: "Non-smoker", value: "NEVER" },
+          { text: "Social smoker", value: "SOMETIMES" },
+          { text: "Regular smoker", value: "OFTEN" },
+          { text: "Heavy smoker", value: "ALWAYS" },
+        ],
+      },
+      {
+        text: "What is your drinking preference?",
+        type: "RADIO",
+        order: 3,
+        required: true,
+        weight: 1.5,
+        options: [
+          { text: "Non-drinker", value: "NEVER" },
+          { text: "Social drinker", value: "SOMETIMES" },
+          { text: "Regular drinker", value: "OFTEN" },
+          { text: "Frequent drinker", value: "ALWAYS" },
+        ],
+      },
+      {
+        text: "What is your preference about pets?",
+        type: "RADIO",
+        order: 4,
+        required: true,
+        weight: 1.8,
+        options: [
+          { text: "No pets", value: "NEVER" },
+          { text: "Okay with pets", value: "SOMETIMES" },
+          { text: "Have pets", value: "OFTEN" },
+          { text: "Love pets", value: "ALWAYS" },
+        ],
+      },
+      {
+        text: "What is your social vibe?",
+        type: "RADIO",
+        order: 5,
+        required: true,
+        weight: 1.2,
+        options: [
+          { text: "Introverted", value: "NEVER" },
+          { text: "Balanced", value: "SOMETIMES" },
+          { text: "Social", value: "OFTEN" },
+          { text: "Very social", value: "ALWAYS" },
+        ],
+      },
+    ],
+  },
+];
+
 function generateIndianPhoneNumber() {
   // Generate random Indian phone number starting with +91
   const prefixes = ["98", "97", "96", "99", "90", "91", "92", "93", "94", "95"];
@@ -90,8 +178,8 @@ function getRandomPhotos(gender) {
     gender === "MALE"
       ? maleProfilePhotos
       : gender === "FEMALE"
-      ? femaleProfilePhotos
-      : otherProfilePhotos;
+        ? femaleProfilePhotos
+        : otherProfilePhotos;
 
   // Shuffle and take 3-5 photos
   const shuffled = [...photoSet].sort(() => 0.5 - Math.random());
@@ -103,12 +191,115 @@ function getRandomKYCIdType() {
   return faker.helpers.arrayElement(["AADHAAR", "PAN", "DRIVING_LICENSE"]);
 }
 
+// Helper function to get random lifestyle question responses
+function getRandomLifestyleResponse(question, questionData) {
+  switch (question.type) {
+    case "RADIO":
+      // Get options from the questionData (original data) since question object doesn't have options
+      const options = questionData.options || [];
+      const randomOption = faker.helpers.arrayElement(options);
+      return { selectedOptions: [randomOption.value] };
+
+    case "TEXT":
+      return { textValue: faker.lorem.sentence() };
+
+    case "NUMBER":
+      return { numberValue: faker.number.float({ min: 1, max: 10 }) };
+
+    case "DATE":
+      return { dateValue: faker.date.future({ years: 1 }) };
+
+    case "MULTI_SELECT":
+      const multiOptions = questionData.options || [];
+      const selectedCount = faker.number.int({
+        min: 1,
+        max: Math.min(3, multiOptions.length),
+      });
+      const shuffledOptions = [...multiOptions].sort(() => 0.5 - Math.random());
+      const selectedOptions = shuffledOptions
+        .slice(0, selectedCount)
+        .map((opt) => opt.value);
+      return { selectedOptions };
+
+    default:
+      return {};
+  }
+}
+
+async function seedQuestions() {
+  console.log("📝 Seeding lifestyle questions...");
+
+  // Clear existing questions and related data
+  await prisma.questionResponse.deleteMany();
+  await prisma.option.deleteMany();
+  await prisma.question.deleteMany();
+  await prisma.questionCategory.deleteMany();
+
+  const createdQuestions = [];
+
+  for (const categoryData of questionCategories) {
+    // Create category
+    const category = await prisma.questionCategory.create({
+      data: {
+        name: categoryData.name,
+        description: categoryData.description,
+        order: categoryData.order,
+      },
+    });
+
+    console.log(`✅ Created category: ${category.name}`);
+
+    // Create questions for this category
+    for (const questionData of categoryData.questions) {
+      const question = await prisma.question.create({
+        data: {
+          categoryId: category.id,
+          text: questionData.text,
+          type: questionData.type,
+          order: questionData.order,
+          required: questionData.required || false,
+          weight: questionData.weight || 1.0,
+        },
+      });
+
+      // Create options if question has them
+      if (questionData.options && questionData.options.length > 0) {
+        const optionsData = questionData.options.map((opt, index) => ({
+          questionId: question.id,
+          text: opt.text,
+          value: opt.value,
+          order: index,
+        }));
+
+        await prisma.option.createMany({
+          data: optionsData,
+        });
+      }
+
+      // Store question with its data for later use
+      createdQuestions.push({
+        question,
+        questionData, // Store the original question data with options
+      });
+      console.log(
+        `   📋 Created question: ${question.text} (weight: ${questionData.weight || 1.0})`,
+      );
+    }
+  }
+
+  return createdQuestions;
+}
+
 async function main() {
   console.log("🌱 Starting seed script...");
 
-  // Clear existing data
+  // First, seed the lifestyle questions
+  const lifestyleQuestionsWithData = await seedQuestions();
+
+  // Clear existing user data
   await prisma.kYCDocument.deleteMany();
   await prisma.photo.deleteMany();
+  await prisma.questionResponse.deleteMany(); // Clear existing responses
   await prisma.profile.deleteMany();
   await prisma.user.deleteMany();
 
@@ -116,6 +307,7 @@ async function main() {
   const profiles = [];
   const photos = [];
   const kycDocuments = [];
+  const questionResponses = [];
 
   // Create 20 users
   for (let i = 0; i < 20; i++) {
@@ -125,6 +317,25 @@ async function main() {
     const firebaseUid = generateFirebaseUid(email);
     const name = generateIndianName(gender);
     const age = faker.number.int({ min: 21, max: 35 });
+
+    // Generate budget and location data
+    const budgetMin = faker.number.float({
+      min: 8000,
+      max: 20000,
+      precision: 1000,
+    });
+    const budgetMax = faker.number.float({
+      min: budgetMin + 5000,
+      max: 40000,
+      precision: 1000,
+    });
+    const userPreferredAreas = faker.helpers.arrayElements(preferredAreas, {
+      min: 1,
+      max: 3,
+    });
+    const moveInDate = faker.datatype.boolean(0.7)
+      ? faker.date.future({ years: 0.5 })
+      : null;
 
     // Create User
     const user = await prisma.user.create({
@@ -141,7 +352,7 @@ async function main() {
 
     users.push(user);
 
-    // Create Profile
+    // Create Profile with budget and location columns
     const profile = await prisma.profile.create({
       data: {
         userId: user.id,
@@ -150,33 +361,35 @@ async function main() {
         gender,
         occupation: faker.helpers.arrayElement(occupations),
         bio: faker.lorem.sentences(2),
-        budgetMin: faker.number.float({
-          min: 8000,
-          max: 20000,
-          precision: 1000,
-        }),
-        budgetMax: faker.number.float({
-          min: 15000,
-          max: 40000,
-          precision: 1000,
-        }),
-        preferredAreas: faker.helpers.arrayElements(preferredAreas, {
-          min: 1,
-          max: 3,
-        }),
-        moveInDate: faker.date.future({ years: 0.5 }),
-        sleepHabit: faker.helpers.arrayElement(["NO", "SOMETIMES", "YES"]),
-        cleanliness: faker.helpers.arrayElement(["NO", "SOMETIMES", "YES"]),
-        smoking: faker.helpers.arrayElement(["NO", "SOMETIMES", "YES"]),
-        drinking: faker.helpers.arrayElement(["NO", "SOMETIMES", "YES"]),
-        pets: faker.helpers.arrayElement(["NO", "SOMETIMES", "YES"]),
-        socialVibe: faker.helpers.arrayElement(["NO", "SOMETIMES", "YES"]),
+        // Budget & Location columns
+        budgetMin,
+        budgetMax,
+        preferredAreas: userPreferredAreas,
+        moveInDate,
         currentStep: faker.number.int({ min: 0, max: 5 }),
         lastSeen: faker.date.recent(),
       },
     });
 
     profiles.push(profile);
+
+    // Create lifestyle question responses for this profile
+    for (const { question, questionData } of lifestyleQuestionsWithData) {
+      const response = getRandomLifestyleResponse(question, questionData);
+
+      const questionResponse = await prisma.questionResponse.create({
+        data: {
+          profileId: profile.id,
+          questionId: question.id,
+          textValue: response.textValue || null,
+          numberValue: response.numberValue || null,
+          dateValue: response.dateValue || null,
+          selectedOptions: response.selectedOptions || [],
+        },
+      });
+
+      questionResponses.push(questionResponse);
+    }
 
     // Create Photos for Profile
     const profilePhotos = getRandomPhotos(gender);
@@ -220,11 +433,15 @@ async function main() {
     }
 
     console.log(`✅ Created user ${i + 1}: ${name} (${phone})`);
+    console.log(`   Budget: ₹${budgetMin} - ₹${budgetMax}`);
+    console.log(`   Areas: ${userPreferredAreas.join(", ")}`);
   }
 
   console.log("\n📊 Seed Summary:");
   console.log(`👥 Users: ${users.length}`);
   console.log(`📝 Profiles: ${profiles.length}`);
+  console.log(`📋 Lifestyle Questions: ${lifestyleQuestionsWithData.length}`);
+  console.log(`🗳️ Lifestyle Responses: ${questionResponses.length}`);
   console.log(`📸 Photos: ${photos.length}`);
   console.log(`🆔 KYC Documents: ${kycDocuments.length}`);
   console.log("\n✨ Seed completed successfully!");
