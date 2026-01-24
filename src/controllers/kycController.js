@@ -79,7 +79,7 @@ export const uploadIDFront = async (req, res) => {
       where: {
         id: kycId,
         userId: userId,
-        status: "PENDING",
+        // status: "PENDING",
       },
     });
 
@@ -138,7 +138,7 @@ export const uploadIDBack = async (req, res) => {
       where: {
         id: kycId,
         userId: userId,
-        status: "PENDING",
+        // status: "PENDING",
       },
     });
 
@@ -205,7 +205,7 @@ export const uploadSelfie = async (req, res) => {
       where: {
         id: kycId,
         userId: userId,
-        status: "PENDING",
+        // status: "PENDING",
       },
     });
 
@@ -265,7 +265,7 @@ export const submitKYC = async (req, res) => {
       where: {
         id: kycId,
         userId: userId,
-        status: "PENDING",
+        // status: "PENDING",
       },
     });
 
@@ -469,6 +469,7 @@ export const approveKYC = async (req, res) => {
       where: { id: id },
       data: {
         status: "VERIFIED",
+        step: 5,
         reviewedAt: new Date(),
         reviewerId: reviewerId,
         rejectionReason: "",
@@ -532,6 +533,7 @@ export const rejectKYC = async (req, res) => {
       where: { id: id },
       data: {
         status: "FLAGGED",
+        step: 5,
         rejectionReason: rejectionReason,
         reviewedAt: new Date(),
         reviewerId: reviewerId,
