@@ -1,5 +1,5 @@
 import prisma from "../../prisma/client.js";
-import { calculateCompatibility } from "../utils/compatibility.js";
+// import { calculateCompatibility } from "../utils/compatibility.js";
 
 // Emit socket event for new chat creation
 import { getIO, getUserSocketId } from "../socket.js";
