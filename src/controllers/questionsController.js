@@ -11,7 +11,7 @@ export const createQuestion = async (req, res) => {
       order,
       required,
       weight = 1.0,
-      placeholder,
+      // placeholder,
     } = req.body;
 
     // Get or create category
@@ -38,7 +38,7 @@ export const createQuestion = async (req, res) => {
           (await prisma.question.count({ where: { categoryId: category.id } })),
         required: required || false,
         weight,
-        placeholder,
+        // placeholder,
         options: {
           create: options?.map((opt, index) => ({
             text: opt.text,
@@ -72,7 +72,7 @@ export const updateQuestion = async (req, res) => {
       isActive,
       required,
       weight,
-      placeholder,
+      // placeholder,
     } = req.body;
 
     // Update question
@@ -85,7 +85,7 @@ export const updateQuestion = async (req, res) => {
         isActive,
         required,
         weight,
-        placeholder,
+        // placeholder,
       },
     });
 
