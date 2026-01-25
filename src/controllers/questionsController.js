@@ -1,3 +1,5 @@
+import prisma from "../../prisma/client";
+
 // Admin Question Controllers
 export const createQuestion = async (req, res) => {
   try {
