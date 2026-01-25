@@ -23,7 +23,7 @@ import {
 const profileRouter = Router();
 
 profileRouter.get("/me", authMiddleware, getMyProfile);
-profileRouter.get("/:userId", authMiddleware, getUserProfile);
+
 profileRouter.get("/questions", authMiddleware, getAllQuestions);
 profileRouter.get(
   "/questions/:category",
@@ -42,5 +42,5 @@ profileRouter.post("/questions/create", authMiddleware, createQuestion);
 profileRouter.patch("/questions/update", authMiddleware, updateQuestion);
 profileRouter.delete("/questions/delete", authMiddleware, deleteQuestion);
 profileRouter.patch("/questions/reorder", authMiddleware, reorderQuestions);
-
+profileRouter.get("/:userId", authMiddleware, getUserProfile);
 export default profileRouter;
