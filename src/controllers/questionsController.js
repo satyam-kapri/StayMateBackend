@@ -1,4 +1,4 @@
-import prisma from "../../prisma/client";
+import prisma from "../../prisma/client.js";
 
 // Admin Question Controllers
 export const createQuestion = async (req, res) => {
