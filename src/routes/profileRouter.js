@@ -39,8 +39,8 @@ profileRouter.post("/photo", authMiddleware, handleUpload(upload), uploadPhoto);
 profileRouter.delete("/photo/:photoId", authMiddleware, deletePhoto);
 
 profileRouter.post("/questions/create", authMiddleware, createQuestion);
-profileRouter.patch("/questions/update", authMiddleware, updateQuestion);
-profileRouter.delete("/questions/delete", authMiddleware, deleteQuestion);
+profileRouter.patch("/questions/:id", authMiddleware, updateQuestion);
+profileRouter.delete("/questions/:id", authMiddleware, deleteQuestion);
 profileRouter.patch("/questions/reorder", authMiddleware, reorderQuestions);
 profileRouter.get("/:userId", authMiddleware, getUserProfile);
 export default profileRouter;
