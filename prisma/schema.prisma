@@ -78,7 +78,6 @@ model Question {
   id          String    @id @default(uuid())
   categoryId  String
   category    QuestionCategory @relation(fields: [categoryId], references: [id])
-  
   text        String
   type        QuestionType
   options     Option[]

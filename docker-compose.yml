@@ -41,7 +41,7 @@ services:
       - "443:443" # HTTPS port
     environment:
       # 👇 CHANGE THIS IP to your actual AWS Public IP 👇
-      DOMAINS: "15.206.178.19.nip.io -> http://backend:3000"
+      DOMAINS: "13.203.41.42.nip.io -> http://backend:3000"
       WEBSOCKET: "true"
       # 'production' gives you a real green lock.
       STAGE: "production"
