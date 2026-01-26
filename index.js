@@ -5,6 +5,7 @@ import profileRouter from "./src/routes/profileRouter.js";
 import matchesRouter from "./src/routes/matchesRoutes.js";
 import chatRouter from "./src/routes/chatRouter.js";
 import userRouter from "./src/routes/userRouter.js";
+import locationRouter from "./src/routes/locationRouter.js";
 import morgan from "morgan";
 import http from "http";
 import { initializeSocket } from "./src/socket.js";
@@ -35,6 +36,7 @@ app.use("/matches", matchesRouter);
 app.use("/chat", chatRouter);
 app.use("/user", userRouter);
 app.use("/kyc", kycRouter);
+app.use("/locations", locationRouter);
 // Start the server
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, "0.0.0.0", () => {
