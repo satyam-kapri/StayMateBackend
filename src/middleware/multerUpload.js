@@ -47,24 +47,24 @@ const fileFilter = (req, file, cb) => {
 };
 export const upload = multer({
   storage: storage,
-  limits: { fileSize: 10 * 1024 * 1024 },
+  limits: { fileSize: 20 * 1024 * 1024 },
   fileFilter: fileFilter,
 }).single("photo");
 export const uploadIDFront = multer({
   storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
   fileFilter: fileFilter,
 }).single("idFront");
 
 export const uploadIDBack = multer({
   storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
   fileFilter: fileFilter,
 }).single("idBack");
 
 export const uploadSelfie = multer({
   storage: storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
   fileFilter: fileFilter,
 }).single("selfie");
 
