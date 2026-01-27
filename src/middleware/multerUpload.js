@@ -64,7 +64,7 @@ export const uploadIDBack = multer({
 
 export const uploadSelfie = multer({
   storage: storage,
-  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
+  limits: { fileSize: 100 * 1024 * 1024 }, // 20MB
   fileFilter: fileFilter,
 }).single("selfie");
 
