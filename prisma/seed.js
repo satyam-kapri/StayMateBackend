@@ -232,7 +232,7 @@ async function seedLocations() {
   console.log("📍 Seeding locations...");
 
   // Clear existing locations
-  await prisma.location.deleteMany();
+  // await prisma.location.deleteMany();
 
   const locations = [];
 

@@ -115,7 +115,7 @@ export const getUserById = async (req, res) => {
             bio: true,
             budgetMin: true,
             budgetMax: true,
-            preferredAreas: true,
+            preferredLocations: true,
             moveInDate: true,
             sleepHabit: true,
             cleanliness: true,
@@ -201,10 +201,10 @@ export const updateUserStatus = async (req, res) => {
       where: { id: id },
       data: updatedData,
     });
-    if(status){
+    if (status) {
       await prisma.kYCDocument.update({
-        where:{userId:id},
-        data:{status}
+        where: { userId: id },
+        data: { status },
       });
     }
     res.json({
