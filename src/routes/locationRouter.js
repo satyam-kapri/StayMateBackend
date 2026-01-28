@@ -6,6 +6,7 @@ import {
   deleteLocation,
   getAllLocations,
   getLocation,
+  checkLocationUsage,
 } from "../controllers/locationController.js";
 
 import authMiddleware from "../middleware/authMiddleware.js";
