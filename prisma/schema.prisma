@@ -53,9 +53,9 @@ model Profile {
   // Preferences & Location
   budgetMin         Float
   budgetMax         Float
-  preferredAreas    Areas[]       
+       
   moveInDate        DateTime?
-  
+  preferredLocations Location[] @relation("PreferredLocations")
   // Media 
   photos            Photo[]
   
@@ -63,6 +63,14 @@ model Profile {
 
   currentStep       Int            @default(0)        
   lastSeen          DateTime?
+}
+model Location {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  isActive  Boolean  @default(true)
+  profiles  Profile[] @relation("PreferredLocations")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 model QuestionCategory {
   id          String    @id @default(uuid())
@@ -234,15 +242,4 @@ enum MatchStatus {
   PENDING
   CONNECTED // Mutual Connect 
   SKIPPED
-}
-enum PreferenceLevel {
-  NO
-  SOMETIMES
-  YES
-}
-enum Areas{
-  Delhi
-  Gurugram
-  Noida
-  Greater_Noida
 }

@@ -120,6 +120,7 @@ export const getMatchFeed = async (req, res) => {
                 question: true,
               },
             },
+            preferredLocations: true,
           },
         },
       },
@@ -150,7 +151,7 @@ export const getMatchFeed = async (req, res) => {
       },
     });
 
-    // Build where conditions for columns
+    // Build where conditions
     const whereConditions = {
       userId: { notIn: Array.from(excludedIds) },
       user: { isVerified: true },
@@ -159,15 +160,6 @@ export const getMatchFeed = async (req, res) => {
     // Add column filters
     if (filters.gender) {
       whereConditions.gender = filters.gender;
-    }
-
-    if (filters.preferredAreas) {
-      const areas = Array.isArray(filters.preferredAreas)
-        ? filters.preferredAreas
-        : [filters.preferredAreas];
-      whereConditions.preferredAreas = {
-        hasSome: areas,
-      };
     }
 
     if (filters.budgetMin) {
@@ -181,7 +173,7 @@ export const getMatchFeed = async (req, res) => {
     if (filters.moveInDate) {
       const targetDate = new Date(filters.moveInDate);
       const startDate = new Date(targetDate);
-      startDate.setDate(startDate.getDate() - 15); // ±15 days
+      startDate.setDate(startDate.getDate() - 15);
       const endDate = new Date(targetDate);
       endDate.setDate(endDate.getDate() + 15);
 
@@ -191,7 +183,7 @@ export const getMatchFeed = async (req, res) => {
       };
     }
 
-    // Get potential matches with their lifestyle responses
+    // Get potential matches with their lifestyle responses and locations
     const potentialMatches = await prisma.user.findMany({
       where: {
         id: { notIn: Array.from(excludedIds) },
@@ -205,6 +197,7 @@ export const getMatchFeed = async (req, res) => {
                 question: true,
               },
             },
+            preferredLocations: true,
             photos: true,
           },
         },
@@ -219,14 +212,19 @@ export const getMatchFeed = async (req, res) => {
       if (filters.gender && user.profile.gender !== filters.gender)
         return false;
 
-      if (filters.preferredAreas) {
-        const areas = Array.isArray(filters.preferredAreas)
-          ? filters.preferredAreas
-          : [filters.preferredAreas];
-        const hasCommonArea = areas.some((area) =>
-          user.profile.preferredAreas.includes(area),
+      // Location filtering
+      if (filters.preferredLocationIds) {
+        const locationIds = Array.isArray(filters.preferredLocationIds)
+          ? filters.preferredLocationIds
+          : [filters.preferredLocationIds];
+
+        const userLocationIds = user.profile.preferredLocations.map(
+          (loc) => loc.id,
         );
-        if (!hasCommonArea) return false;
+        const hasCommonLocation = locationIds.some((id) =>
+          userLocationIds.includes(id),
+        );
+        if (!hasCommonLocation) return false;
       }
 
       if (
@@ -266,7 +264,7 @@ export const getMatchFeed = async (req, res) => {
           lifestyleQuestions,
         ),
       }))
-      .filter((item) => item.compatibilityScore >= 30) // Minimum 30% compatibility
+      .filter((item) => item.compatibilityScore >= 30)
       .sort((a, b) => b.compatibilityScore - a.compatibilityScore)
       .slice(0, 50);
 
@@ -277,7 +275,7 @@ export const getMatchFeed = async (req, res) => {
   }
 };
 
-// Compatibility calculation
+// Updated Compatibility calculation with new location logic
 function calculateCompatibility(me, other, lifestyleQuestions) {
   let totalScore = 0;
   let maxScore = 0;
@@ -297,14 +295,17 @@ function calculateCompatibility(me, other, lifestyleQuestions) {
   }
   maxScore += 30;
 
-  // 2. Location compatibility (20% weight)
-  if (me.preferredAreas.length > 0 && other.preferredAreas.length > 0) {
-    const commonAreas = me.preferredAreas.filter((area) =>
-      other.preferredAreas.includes(area),
+  // 2. Location compatibility (20% weight) - UPDATED
+  const myLocationIds = me.preferredLocations.map((loc) => loc.id);
+  const otherLocationIds = other.preferredLocations.map((loc) => loc.id);
+
+  if (myLocationIds.length > 0 && otherLocationIds.length > 0) {
+    const commonLocations = myLocationIds.filter((id) =>
+      otherLocationIds.includes(id),
     );
     const locationScore =
-      (commonAreas.length /
-        Math.max(me.preferredAreas.length, other.preferredAreas.length)) *
+      (commonLocations.length /
+        Math.max(myLocationIds.length, otherLocationIds.length)) *
       20;
     totalScore += locationScore;
   }
@@ -316,12 +317,12 @@ function calculateCompatibility(me, other, lifestyleQuestions) {
       (new Date(me.moveInDate) - new Date(other.moveInDate)) /
         (1000 * 60 * 60 * 24),
     );
-    const dateScore = Math.max(0, 10 - (diffDays / 15) * 10); // Decreases by 1/15th per day
+    const dateScore = Math.max(0, 10 - (diffDays / 15) * 10);
     totalScore += dateScore;
   }
   maxScore += 10;
 
-  // 4. Lifestyle compatibility (40% weight, distributed by question weights)
+  // 4. Lifestyle compatibility (40% weight)
   const meResponsesMap = {};
   me.questionResponses?.forEach((r) => {
     meResponsesMap[r.questionId] = r;
@@ -359,7 +360,6 @@ function calculateCompatibility(me, other, lifestyleQuestions) {
   }
   maxScore += 40;
 
-  // Return percentage score
   return Math.round((totalScore / maxScore) * 100);
 }
 

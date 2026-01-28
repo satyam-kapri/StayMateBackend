@@ -1,16 +1,11 @@
+// locationController.js
 import prisma from "../../prisma/client.js";
-
-/**
- * GET /api/locations
- * Get all active locations
- */
-export const getAllLocations = async (req, res) => {
+export const getLocations = async (req, res) => {
   try {
     const locations = await prisma.location.findMany({
       where: { isActive: true },
-      orderBy: [{ order: "asc" }, { name: "asc" }],
+      orderBy: { name: "asc" },
     });
-
     res.json({ success: true, locations });
   } catch (err) {
     console.error(err);
@@ -20,38 +15,12 @@ export const getAllLocations = async (req, res) => {
   }
 };
 
-/**
- * POST /api/admin/locations
- * Create new location (Admin only)
- */
 export const createLocation = async (req, res) => {
   try {
-    const { name, description, order } = req.body;
-
-    if (!name) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Location name is required" });
-    }
-
-    const existingLocation = await prisma.location.findUnique({
-      where: { name },
-    });
-
-    if (existingLocation) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Location already exists" });
-    }
-
+    const { name } = req.body;
     const location = await prisma.location.create({
-      data: {
-        name,
-        description,
-        order: order || 0,
-      },
+      data: { name },
     });
-
     res.json({ success: true, location });
   } catch (err) {
     console.error(err);
@@ -61,25 +30,14 @@ export const createLocation = async (req, res) => {
   }
 };
 
-/**
- * PUT /api/admin/locations/:id
- * Update location (Admin only)
- */
 export const updateLocation = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description, order, isActive } = req.body;
-
+    const { name, isActive } = req.body;
     const location = await prisma.location.update({
       where: { id },
-      data: {
-        name,
-        description,
-        order,
-        isActive,
-      },
+      data: { name, isActive },
     });
-
     res.json({ success: true, location });
   } catch (err) {
     console.error(err);
@@ -89,44 +47,33 @@ export const updateLocation = async (req, res) => {
   }
 };
 
-/**
- * DELETE /api/admin/locations/:id
- * Delete location (soft delete - Admin only)
- */
 export const deleteLocation = async (req, res) => {
   try {
     const { id } = req.params;
-
-    // Soft delete by setting isActive to false
-    await prisma.location.update({
-      where: { id },
-      data: { isActive: false },
+    // Check if location is used in any profiles
+    const profilesWithLocation = await prisma.profile.count({
+      where: {
+        preferredLocations: {
+          some: { id },
+        },
+      },
     });
 
-    res.json({ success: true, message: "Location deleted successfully" });
+    if (profilesWithLocation > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot delete location that is in use",
+      });
+    }
+
+    await prisma.location.delete({
+      where: { id },
+    });
+    res.json({ success: true });
   } catch (err) {
     console.error(err);
     res
       .status(500)
       .json({ success: false, message: "Failed to delete location" });
-  }
-};
-
-/**
- * GET /api/admin/locations/all
- * Get all locations including inactive (Admin only)
- */
-export const getAllLocationsAdmin = async (req, res) => {
-  try {
-    const locations = await prisma.location.findMany({
-      orderBy: [{ order: "asc" }, { name: "asc" }],
-    });
-
-    res.json({ success: true, locations });
-  } catch (err) {
-    console.error(err);
-    res
-      .status(500)
-      .json({ success: false, message: "Failed to fetch locations" });
   }
 };

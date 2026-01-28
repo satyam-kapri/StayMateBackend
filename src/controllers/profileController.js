@@ -313,8 +313,13 @@ export const updateBasicInfo = async (req, res) => {
  */
 export const updateBudgetLocation = async (req, res) => {
   try {
-    const { budgetMin, budgetMax, preferredAreas, moveInDate, currentStep } =
-      req.body;
+    const {
+      budgetMin,
+      budgetMax,
+      preferredLocationIds,
+      moveInDate,
+      currentStep,
+    } = req.body;
     const userId = req.user.userId;
 
     const profile = await prisma.profile.update({
@@ -322,9 +327,15 @@ export const updateBudgetLocation = async (req, res) => {
       data: {
         budgetMin,
         budgetMax,
-        preferredAreas,
         moveInDate: moveInDate ? new Date(moveInDate) : null,
         currentStep,
+        // Connect locations by their IDs
+        preferredLocations: {
+          set: preferredLocationIds?.map((id) => ({ id })) || [],
+        },
+      },
+      include: {
+        preferredLocations: true,
       },
     });
 
@@ -336,7 +347,6 @@ export const updateBudgetLocation = async (req, res) => {
       .json({ success: false, message: "Budget & location update failed" });
   }
 };
-
 /**
  * 3️⃣ LIFESTYLE (Dynamic questions)
  */
@@ -612,6 +622,7 @@ export const getMyProfile = async (req, res) => {
         profile: {
           include: {
             photos: true,
+            preferredLocations: true, // Added location relationship
             questionResponses: {
               include: {
                 question: {
@@ -632,7 +643,6 @@ export const getMyProfile = async (req, res) => {
     res.status(500).json({ success: false, message: "Fetch profile failed" });
   }
 };
-
 export const getUserProfile = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -652,6 +662,7 @@ export const getUserProfile = async (req, res) => {
           },
         },
         photos: true,
+        preferredLocations: true, // Added location relationship
         questionResponses: {
           include: {
             question: {

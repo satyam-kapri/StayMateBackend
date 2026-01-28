@@ -48,7 +48,9 @@ const selfiePhotos = [
   "https://media.istockphoto.com/id/1460836430/photo/video-ringing-successful-businessman-looking-at-smartphone-camera-talking-remotely-with.jpg?s=612x612&w=0&k=20&c=-DkYIW3peErREuT-TbO0XgzLSWdvwNKW0DSES5H3TkY=",
 ];
 
-const preferredAreas = ["Delhi", "Gurugram", "Noida", "Greater_Noida"];
+// Fixed location names as specified
+const locationNames = ["Delhi", "Gurugram", "Noida", "Greater Noida"];
+
 const occupations = [
   "Software Engineer",
   "Doctor",
@@ -226,6 +228,28 @@ function getRandomLifestyleResponse(question, questionData) {
   }
 }
 
+async function seedLocations() {
+  console.log("📍 Seeding locations...");
+
+  // Clear existing locations
+  await prisma.location.deleteMany();
+
+  const locations = [];
+
+  for (const locationName of locationNames) {
+    const location = await prisma.location.create({
+      data: {
+        name: locationName,
+        isActive: true,
+      },
+    });
+    locations.push(location);
+    console.log(`✅ Created location: ${location.name}`);
+  }
+
+  return locations;
+}
+
 async function seedQuestions() {
   console.log("📝 Seeding lifestyle questions...");
 
@@ -293,13 +317,18 @@ async function seedQuestions() {
 async function main() {
   console.log("🌱 Starting seed script...");
 
-  // First, seed the lifestyle questions
+  // First, seed the locations
+  const locations = await seedLocations();
+
+  // Then, seed the lifestyle questions
   const lifestyleQuestionsWithData = await seedQuestions();
 
   // Clear existing user data
   await prisma.kYCDocument.deleteMany();
   await prisma.photo.deleteMany();
   await prisma.questionResponse.deleteMany(); // Clear existing responses
+  // Need to clear the relationship table first before profiles
+  await prisma.$executeRaw`DELETE FROM "_PreferredLocations"`;
   await prisma.profile.deleteMany();
   await prisma.user.deleteMany();
 
@@ -329,10 +358,13 @@ async function main() {
       max: 40000,
       precision: 1000,
     });
-    const userPreferredAreas = faker.helpers.arrayElements(preferredAreas, {
+
+    // Select 1-3 random locations for this user
+    const selectedLocations = faker.helpers.arrayElements(locations, {
       min: 1,
       max: 3,
     });
+
     const moveInDate = faker.datatype.boolean(0.7)
       ? faker.date.future({ years: 0.5 })
       : null;
@@ -352,7 +384,7 @@ async function main() {
 
     users.push(user);
 
-    // Create Profile with budget and location columns
+    // Create Profile with budget (location connection will be added later)
     const profile = await prisma.profile.create({
       data: {
         userId: user.id,
@@ -361,10 +393,9 @@ async function main() {
         gender,
         occupation: faker.helpers.arrayElement(occupations),
         bio: faker.lorem.sentences(2),
-        // Budget & Location columns
+        // Budget columns
         budgetMin,
         budgetMax,
-        preferredAreas: userPreferredAreas,
         moveInDate,
         currentStep: faker.number.int({ min: 0, max: 5 }),
         lastSeen: faker.date.recent(),
@@ -372,6 +403,16 @@ async function main() {
     });
 
     profiles.push(profile);
+
+    // Connect profile to selected locations
+    await prisma.profile.update({
+      where: { id: profile.id },
+      data: {
+        preferredLocations: {
+          connect: selectedLocations.map((loc) => ({ id: loc.id })),
+        },
+      },
+    });
 
     // Create lifestyle question responses for this profile
     for (const { question, questionData } of lifestyleQuestionsWithData) {
@@ -432,12 +473,17 @@ async function main() {
       kycDocuments.push(kyc);
     }
 
+    const locationNamesList = selectedLocations
+      .map((loc) => loc.name)
+      .join(", ");
+
     console.log(`✅ Created user ${i + 1}: ${name} (${phone})`);
     console.log(`   Budget: ₹${budgetMin} - ₹${budgetMax}`);
-    console.log(`   Areas: ${userPreferredAreas.join(", ")}`);
+    console.log(`   Locations: ${locationNamesList}`);
   }
 
   console.log("\n📊 Seed Summary:");
+  console.log(`📍 Locations: ${locations.length}`);
   console.log(`👥 Users: ${users.length}`);
   console.log(`📝 Profiles: ${profiles.length}`);
   console.log(`📋 Lifestyle Questions: ${lifestyleQuestionsWithData.length}`);
