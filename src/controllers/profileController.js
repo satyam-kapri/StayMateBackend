@@ -279,7 +279,7 @@ const getOrCreateProfile = async (userId) => {
       gender: "MALE",
       budgetMin: 0,
       budgetMax: 0,
-      preferredLocations: [],
+      
     },
   });
 };
