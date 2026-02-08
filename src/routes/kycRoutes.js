@@ -5,6 +5,7 @@ import {
   handleUpload,
   uploadIDBack,
   uploadIDFront,
+  uploadPoliceVerification,
   uploadSelfie,
 } from "../middleware/multerUpload.js";
 
@@ -19,7 +20,7 @@ kycRouter.post(
   "/upload/front",
   authMiddleware,
   handleUpload(uploadIDFront),
-  kycController.uploadIDFront
+  kycController.uploadIDFront,
 );
 
 // Step 3: Upload ID Back
@@ -27,15 +28,23 @@ kycRouter.post(
   "/upload/back",
   authMiddleware,
   handleUpload(uploadIDBack),
-  kycController.uploadIDBack
+  kycController.uploadIDBack,
 );
 
-// Step 4: Upload Selfie
+// Step 4: Upload Police Verification
+kycRouter.post(
+  "/upload/police-verification",
+  authMiddleware,
+  handleUpload(uploadPoliceVerification),
+  kycController.uploadPoliceVerification,
+);
+
+// Step 5: Upload Selfie
 kycRouter.post(
   "/upload/selfie",
   authMiddleware,
   handleUpload(uploadSelfie),
-  kycController.uploadSelfie
+  kycController.uploadSelfie,
 );
 
 // Step 5: Final Submission

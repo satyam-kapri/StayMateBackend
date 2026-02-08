@@ -199,6 +199,7 @@ model KYCDocument {
   idType          IdType
   idFrontUrl      String
   idBackUrl       String?
+  policeVerificationUrl String?
   selfieUrl       String
   
   // Status

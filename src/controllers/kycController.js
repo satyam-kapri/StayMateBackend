@@ -26,6 +26,7 @@ export const startKYC = async (req, res) => {
         step: 1,
         idFrontUrl: "", // Clear previous images on restart
         idBackUrl: "",
+        policeVerificationUrl: "",
         selfieUrl: "",
         rejectionReason: null, // Clear previous rejection reasons
       },
@@ -162,7 +163,7 @@ export const uploadIDBack = async (req, res) => {
       where: { id: kycId },
       data: {
         idBackUrl: req.file.location,
-        step: 3, // Move to next step (selfie)
+        step: 3, // Move to next step (police verification)
       },
     });
 
@@ -180,7 +181,65 @@ export const uploadIDBack = async (req, res) => {
   }
 };
 
-// STEP 4: Upload Selfie
+// STEP 4: Upload Police Verification
+export const uploadPoliceVerification = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { kycId } = req.body;
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "Police verification document is required",
+      });
+    }
+
+    if (!kycId) {
+      return res.status(400).json({
+        success: false,
+        message: "KYC ID is required",
+      });
+    }
+
+    // Verify KYC belongs to user
+    const kyc = await prisma.kYCDocument.findFirst({
+      where: {
+        id: kycId,
+        userId: userId,
+      },
+    });
+
+    if (!kyc) {
+      return res.status(404).json({
+        success: false,
+        message: "KYC not found",
+      });
+    }
+
+    // Update KYC with police verification URL
+    const updatedKYC = await prisma.kYCDocument.update({
+      where: { id: kycId },
+      data: {
+        policeVerificationUrl: req.file.location,
+        step: 4, // Move to next step (selfie)
+      },
+    });
+
+    res.json({
+      success: true,
+      message: "Police verification uploaded successfully",
+      kyc: updatedKYC,
+    });
+  } catch (error) {
+    console.error("Upload police verification error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to upload police verification",
+    });
+  }
+};
+
+// STEP 5: Upload Selfie
 export const uploadSelfie = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -229,7 +288,7 @@ export const uploadSelfie = async (req, res) => {
       where: { id: kycId },
       data: {
         selfieUrl: req.file.location,
-        step: 4, // All files uploaded
+        step: 5, // All files uploaded
       },
     });
 
@@ -247,7 +306,7 @@ export const uploadSelfie = async (req, res) => {
   }
 };
 
-// STEP 5: Submit KYC for Review
+// STEP 6: Submit KYC for Review
 export const submitKYC = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -277,10 +336,11 @@ export const submitKYC = async (req, res) => {
     }
 
     // Check if all required files are uploaded
-    if (!kyc.idFrontUrl || !kyc.selfieUrl) {
+    if (!kyc.idFrontUrl || !kyc.selfieUrl || !kyc.policeVerificationUrl) {
       return res.status(400).json({
         success: false,
-        message: "Please upload ID front and selfie before submitting",
+        message:
+          "Please upload ID front, police verification, and selfie before submitting",
       });
     }
 
@@ -289,7 +349,7 @@ export const submitKYC = async (req, res) => {
       where: { id: kycId },
       data: {
         submittedAt: new Date(),
-        step: 5, // Submitted for review
+        step: 6, // Submitted for review
       },
     });
 
@@ -469,7 +529,7 @@ export const approveKYC = async (req, res) => {
       where: { id: id },
       data: {
         status: "VERIFIED",
-        step: 5,
+        step: 6,
         reviewedAt: new Date(),
         reviewerId: reviewerId,
         rejectionReason: "",
@@ -533,7 +593,7 @@ export const rejectKYC = async (req, res) => {
       where: { id: id },
       data: {
         status: "FLAGGED",
-        step: 5,
+        step: 6,
         rejectionReason: rejectionReason,
         reviewedAt: new Date(),
         reviewerId: reviewerId,
