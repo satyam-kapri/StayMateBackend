@@ -117,14 +117,18 @@ export const getUserById = async (req, res) => {
             budgetMax: true,
             preferredLocations: true,
             moveInDate: true,
-            sleepHabit: true,
-            cleanliness: true,
-            smoking: true,
-            drinking: true,
-            pets: true,
-            socialVibe: true,
             currentStep: true,
             lastSeen: true,
+            questionResponses: {
+              include: {
+                question: {
+                  include: {
+                    category: true,
+                    options: true,
+                  },
+                },
+              },
+            },
             photos: {
               select: {
                 id: true,
@@ -353,7 +357,7 @@ export const getAllProfiles = async (req, res) => {
           bio: true,
           budgetMin: true,
           budgetMax: true,
-          preferredAreas: true,
+          preferredLocations: true,
           currentStep: true,
           lastSeen: true,
           createdAt: true,
