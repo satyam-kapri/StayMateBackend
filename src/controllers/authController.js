@@ -60,11 +60,11 @@ export const fakeAuth = async (req, res) => {
   const { phoneNumber, password } = req.body;
 
   try {
-    // if (phoneNumber !== "9999999999") {
-    //   res.status(401).send("Unauthorized");
-    // }
+    if (phoneNumber !== "8178150763") {
+      return res.status(401).send("Unauthorized");
+    }
     if (password !== "admin") {
-      res.status(401).send("Unauthorized");
+      return res.status(401).send("Unauthorized");
     }
     //upsert user in the database
     let createdUser = await prisma.user.upsert({
