@@ -60,9 +60,9 @@ export const fakeAuth = async (req, res) => {
   const { phoneNumber, password } = req.body;
 
   try {
-    if (phoneNumber !== "9999999999") {
-      res.status(401).send("Unauthorized");
-    }
+    // if (phoneNumber !== "9999999999") {
+    //   res.status(401).send("Unauthorized");
+    // }
     if (password !== "admin") {
       res.status(401).send("Unauthorized");
     }
