@@ -70,7 +70,7 @@ export const fakeAuth = async (req, res) => {
     let createdUser = await prisma.user.upsert({
       where: { phone: phoneNumber },
       update: {},
-      create: { firebaseUid: "hghghjghgdhjd", phone: phoneNumber },
+      create: { firebaseUid: "admin-hghghjghgdhjerewqred", phone: phoneNumber },
     });
 
     const user = await prisma.user.findFirst({
