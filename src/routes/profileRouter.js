@@ -43,4 +43,5 @@ profileRouter.patch("/questions/:id", authMiddleware, updateQuestion);
 profileRouter.delete("/questions/:id", authMiddleware, deleteQuestion);
 profileRouter.patch("/questions/reorder", authMiddleware, reorderQuestions);
 profileRouter.get("/:userId", authMiddleware, getUserProfile);
+profileRouter.post("/delete-request", authMiddleware, deleteRequest);
 export default profileRouter;

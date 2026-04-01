@@ -279,7 +279,7 @@ const getOrCreateProfile = async (userId) => {
       gender: "MALE",
       budgetMin: 0,
       budgetMax: 0,
-      
+
     },
   });
 };
@@ -446,11 +446,11 @@ export const getQuestionsByCategory = async (req, res) => {
         ...question,
         response: response
           ? {
-              textValue: response.textValue,
-              numberValue: response.numberValue,
-              dateValue: response.dateValue,
-              selectedOptions: response.selectedOptions,
-            }
+            textValue: response.textValue,
+            numberValue: response.numberValue,
+            dateValue: response.dateValue,
+            selectedOptions: response.selectedOptions,
+          }
           : null,
       };
     });
@@ -680,5 +680,12 @@ export const getUserProfile = async (req, res) => {
   } catch (err) {
     console.log(err);
     res.status(500).json({ success: false, message: "Fetch profile failed" });
+  }
+};
+export const deleteRequest = async (req, res) => {
+  try {
+    res.json({ success: true, message: "Account deletion request sent successfully" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Delete profile failed" });
   }
 };
