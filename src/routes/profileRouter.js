@@ -12,7 +12,9 @@ import {
   getAllQuestions,
   deleteRequest,
   reportUser,
-  blockUser
+  blockUser,
+  unblockUser,
+  getBlockedUsers
 } from "../controllers/profileController.js";
 import { handleUpload, upload } from "../middleware/multerUpload.js";
 import authMiddleware from "../middleware/authMiddleware.js";
@@ -49,4 +51,6 @@ profileRouter.get("/:userId", authMiddleware, getUserProfile);
 profileRouter.post("/delete-request", authMiddleware, deleteRequest);
 profileRouter.post("/report", authMiddleware, reportUser);
 profileRouter.post("/block", authMiddleware, blockUser);
+profileRouter.post("/unblock", authMiddleware, unblockUser);
+profileRouter.get("/blocked-users", authMiddleware, getBlockedUsers);
 export default profileRouter;

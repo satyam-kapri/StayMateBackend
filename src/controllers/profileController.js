@@ -737,4 +737,63 @@ export const blockUser = async (req, res) => {
   }
 };
 
+export const unblockUser = async (req, res) => {
+  try {
+    const { targetUserId } = req.body;
+    const blockerId = req.user.userId;
+
+    if (!targetUserId) {
+      return res.status(400).json({ success: false, message: "Target userId is required" });
+    }
+
+    await prisma.block.deleteMany({
+      where: {
+        blockerId: blockerId,
+        blockedId: targetUserId,
+      },
+    });
+
+    res.json({ success: true, message: "User unblocked successfully" });
+  } catch (err) {
+    console.error("Unblock user error:", err);
+    res.status(500).json({ success: false, message: "Unblock failed" });
+  }
+};
+
+export const getBlockedUsers = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    const blocks = await prisma.block.findMany({
+      where: { blockerId: userId },
+      include: {
+        blocked: {
+          select: {
+            id: true,
+            profile: {
+              select: {
+                name: true,
+                photos: { take: 1 },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const blockedUsers = blocks.map((b) => ({
+      id: b.blocked.id,
+      name: b.blocked.profile?.name,
+      photo: b.blocked.profile?.photos[0]?.url,
+      blockedAt: b.createdAt,
+    }));
+
+    res.json({ success: true, blockedUsers });
+  } catch (err) {
+    console.error("Fetch blocked users error:", err);
+    res.status(500).json({ success: false, message: "Failed to fetch blocked users" });
+  }
+};
+
+
 
