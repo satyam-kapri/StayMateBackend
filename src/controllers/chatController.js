@@ -6,9 +6,25 @@ export const getChats = async (req, res) => {
   try {
     const userId = req.user.userId;
 
+    // Get IDs of users who have a block relationship with me
+    const blocks = await prisma.block.findMany({
+      where: {
+        OR: [{ blockerId: userId }, { blockedId: userId }],
+      },
+      select: { blockerId: true, blockedId: true },
+    });
+
+    const blockedUserIds = blocks.flatMap((b) =>
+      b.blockerId === userId ? [b.blockedId] : [b.blockerId],
+    );
+
     const chats = await prisma.chat.findMany({
       where: {
-        OR: [{ user1Id: userId }, { user2Id: userId }],
+        AND: [
+          { OR: [{ user1Id: userId }, { user2Id: userId }] },
+          { user1Id: { notIn: blockedUserIds } },
+          { user2Id: { notIn: blockedUserIds } },
+        ],
       },
       include: {
         user1: {
@@ -160,6 +176,25 @@ export const sendMessage = async (req, res) => {
       return res.status(403).json({ error: "Access denied" });
     }
 
+    const otherUserId = chat.user1Id === userId ? chat.user2Id : chat.user1Id;
+
+    // Verify user isn't blocked
+    const block = await prisma.block.findFirst({
+      where: {
+        OR: [
+          { blockerId: userId, blockedId: otherUserId },
+          { blockerId: otherUserId, blockedId: userId },
+        ],
+      },
+    });
+
+    if (block) {
+      return res
+        .status(403)
+        .json({ error: "You cannot message this user because of a block." });
+    }
+
+
     // Create message
     // In your chat controller when creating messages
     const message = await prisma.message.create({
@@ -201,9 +236,9 @@ export const sendMessage = async (req, res) => {
 
     // Emit socket event
     const io = getIO();
-    const otherUserId = chat.user1Id === userId ? chat.user2Id : chat.user1Id;
 
     // Emit to chat room
+
     io.to(`chat_${chatId}`).emit("new-message", messageWithChatId);
 
     // Emit to other user's personal room

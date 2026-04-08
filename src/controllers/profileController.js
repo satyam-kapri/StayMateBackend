@@ -689,3 +689,52 @@ export const deleteRequest = async (req, res) => {
     res.status(500).json({ success: false, message: "Delete profile failed" });
   }
 };
+
+export const reportUser = async (req, res) => {
+  try {
+    const { targetUserId, reason } = req.body;
+    const reporterId = req.user.userId;
+
+    if (!targetUserId || !reason) {
+      return res.status(400).json({ success: false, message: "Target userId and reason are required" });
+    }
+
+    const report = await prisma.report.create({
+      data: {
+        reporterId,
+        targetUserId,
+        reason,
+      },
+    });
+
+    res.json({ success: true, message: "Report submitted successfully", report });
+  } catch (err) {
+    console.error("Report user error:", err);
+    res.status(500).json({ success: false, message: "Report failed" });
+  }
+};
+
+export const blockUser = async (req, res) => {
+  try {
+    const { targetUserId } = req.body;
+    const blockerId = req.user.userId;
+
+    if (!targetUserId) {
+      return res.status(400).json({ success: false, message: "Target userId is required" });
+    }
+
+    const block = await prisma.block.create({
+      data: {
+        blockerId,
+        blockedId: targetUserId,
+      },
+    });
+
+    res.json({ success: true, message: "User blocked successfully", block });
+  } catch (err) {
+    console.error("Block user error:", err);
+    res.status(500).json({ success: false, message: "Block failed" });
+  }
+};
+
+

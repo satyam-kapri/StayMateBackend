@@ -30,12 +30,19 @@ model User {
   sentMatches       Match[]           @relation("MatchesSent")
   receivedMatches   Match[]           @relation("MatchesReceived")
   
- chatsAsUser1 Chat[] @relation("ChatUser1")
- chatsAsUser2 Chat[] @relation("ChatUser2")
- sentMessages Message[]
+  chatsAsUser1 Chat[] @relation("ChatUser1")
+  chatsAsUser2 Chat[] @relation("ChatUser2")
+  sentMessages Message[]
 
- kyc KYCDocument?
+  kyc KYCDocument?
+
+  // Moderation Relations
+  reportsSent     Report[]          @relation("ReportsSent")
+  reportsReceived Report[]          @relation("ReportsReceived")
+  blocksSent      Block[]           @relation("BlocksSent")
+  blocksReceived  Block[]           @relation("BlocksReceived")
 }
+
 
 // ---  Profile & Lifestyle Survey ---
 model Profile {
@@ -244,3 +251,27 @@ enum MatchStatus {
   CONNECTED // Mutual Connect 
   SKIPPED
 }
+
+model Report {
+  id            String   @id @default(uuid())
+  reporterId    String
+  targetUserId  String
+  reporter      User     @relation("ReportsSent", fields: [reporterId], references: [id])
+  targetUser    User     @relation("ReportsReceived", fields: [targetUserId], references: [id])
+  reason        String
+  createdAt     DateTime @default(now())
+
+  @@index([targetUserId])
+}
+
+model Block {
+  id            String   @id @default(uuid())
+  blockerId     String
+  blockedId     String
+  blocker       User     @relation("BlocksSent", fields: [blockerId], references: [id])
+  blocked       User     @relation("BlocksReceived", fields: [blockedId], references: [id])
+  createdAt     DateTime @default(now())
+
+  @@unique([blockerId, blockedId])
+}
+

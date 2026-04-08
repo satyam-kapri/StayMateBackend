@@ -138,10 +138,25 @@ export const getMatchFeed = async (req, res) => {
       select: { requesterId: true, receiverId: true },
     });
 
+    // Users blocked by me or who blocked me
+    const blocks = await prisma.block.findMany({
+      where: {
+        OR: [{ blockerId: userId }, { blockedId: userId }],
+      },
+      select: { blockerId: true, blockedId: true },
+    });
+
     const excludedIds = new Set(
       interactions.flatMap((i) => [i.requesterId, i.receiverId]),
     );
+
+    blocks.forEach((b) => {
+      excludedIds.add(b.blockerId);
+      excludedIds.add(b.blockedId);
+    });
+
     excludedIds.add(userId);
+
 
     // Get all lifestyle questions with weights
     const lifestyleQuestions = await prisma.question.findMany({
@@ -526,12 +541,29 @@ export const getConnectedMatches = async (req, res) => {
   try {
     const userId = req.user.userId;
 
-    // 1. Fetch all connected matches where the user is involved
+    // Get IDs of users who have a block relationship with me
+    const blocks = await prisma.block.findMany({
+      where: {
+        OR: [{ blockerId: userId }, { blockedId: userId }],
+      },
+      select: { blockerId: true, blockedId: true },
+    });
+
+    const blockedUserIds = blocks.flatMap((b) =>
+      b.blockerId === userId ? [b.blockedId] : [b.blockerId],
+    );
+
+    // 1. Fetch all connected matches where the user is involved and not blocked
     const allMatches = await prisma.match.findMany({
       where: {
         status: "CONNECTED",
-        OR: [{ requesterId: userId }, { receiverId: userId }],
+        AND: [
+          { OR: [{ requesterId: userId }, { receiverId: userId }] },
+          { requesterId: { notIn: blockedUserIds } },
+          { receiverId: { notIn: blockedUserIds } },
+        ],
       },
+
       include: {
         requester: {
           select: {
