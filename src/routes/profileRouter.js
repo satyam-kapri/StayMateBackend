@@ -47,10 +47,11 @@ profileRouter.post("/questions/create", authMiddleware, createQuestion);
 profileRouter.patch("/questions/:id", authMiddleware, updateQuestion);
 profileRouter.delete("/questions/:id", authMiddleware, deleteQuestion);
 profileRouter.patch("/questions/reorder", authMiddleware, reorderQuestions);
+profileRouter.get("/blocked-users", authMiddleware, getBlockedUsers);
 profileRouter.get("/:userId", authMiddleware, getUserProfile);
 profileRouter.post("/delete-request", authMiddleware, deleteRequest);
 profileRouter.post("/report", authMiddleware, reportUser);
 profileRouter.post("/block", authMiddleware, blockUser);
 profileRouter.post("/unblock", authMiddleware, unblockUser);
-profileRouter.get("/blocked-users", authMiddleware, getBlockedUsers);
+
 export default profileRouter;
