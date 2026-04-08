@@ -10,6 +10,7 @@ import {
   getUserProfile,
   getQuestionsByCategory,
   getAllQuestions,
+  deleteRequest
 } from "../controllers/profileController.js";
 import { handleUpload, upload } from "../middleware/multerUpload.js";
 import authMiddleware from "../middleware/authMiddleware.js";
